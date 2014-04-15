@@ -1,7 +1,7 @@
 #!/bin/bash
 # EM Feb 2014
 #
-# The setup script for erw-bash-utils must have been called before
+# The setup script for erw-bash-commons must have been called before
 # using this library.
 #
 # This a library of bash functions; to use any of these the calling

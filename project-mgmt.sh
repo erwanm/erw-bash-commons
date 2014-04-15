@@ -1,7 +1,7 @@
 #!/bin/bash
 # EM Feb 2014
 #
-# The setup script for erw-bash-utils must have been called before
+# The setup script for erw-bash-commons must have been called before
 # using this library.
 #
 # This a library of bash functions; to use any of these the calling
@@ -45,7 +45,7 @@ setupFileName="setup.erw-pm.sh"
 # Any call to a setup script must be done with "source" and from the
 # directory where the setup script is located.
 #
-# In order to use this PM system the project erw-bash-utils (which
+# In order to use this PM system the project erw-bash-commons (which
 # contains this library) must have been initialized (the setup script
 # sourced from its own directory), and the ERW_PM_REPO should have
 # been set (the setup script will automatically add the repo in which
