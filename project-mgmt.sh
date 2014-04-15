@@ -9,9 +9,10 @@
 #
 #
 
-source $ERW_BASH_UTILS_PATH/common-lib.sh
-source $ERW_BASH_UTILS_PATH/file-lib.sh
+source $ERW_BASH_COMMONS_PATH/common-lib.sh
+source $ERW_BASH_COMMONS_PATH/file-lib.sh
 
+erwProjectMgmtId="erw-project-mgmt"
 defaultDepFileName="deps.erw-pm"
 setupFileName="setup.erw-pm.sh"
 
@@ -88,6 +89,7 @@ function ensureProjectDeps {
 }
 
 
+
+
 # global variable(s) initialization
-#export ___ERW_BASH_UTILS_PROJECT_MGMT_LIB___=1
 

@@ -167,5 +167,4 @@ function evalSafe {
 
 # global variable(s) initialization
 
-#export ___ERW_BASH_UTILS_COMMON_LIB___=1
 

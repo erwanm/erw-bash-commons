@@ -9,7 +9,7 @@
 #
 #
 
-source $ERW_BASH_UTILS_PATH/common-lib.sh
+source $ERW_BASH_COMMONS_PATH/common-lib.sh
 
 # args: 
 # STDIN = 
