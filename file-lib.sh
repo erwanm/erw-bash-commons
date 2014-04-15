@@ -82,4 +82,55 @@ function linkAbsolutePath {
 }
 
 
+function absolutePath {
+    local entry="$1"
+    if [ -d "$entry" ]; then
+	pushd "$entry" >/dev/null
+	pwd
+	popd >/dev/null
+    else
+	pushd $(dirname "$entry") >/dev/null
+	dir=$(pwd)
+	echo "$dir/$(basename "$entry")"
+	popd >/dev/null
+    fi
+}
 
+
+
+function dieIfNoSuchDir {
+    local dir="$1"
+    local prefixMsg="$2"
+    if [ ! -d "$dir" ]; then
+	echo "${prefixMsg}Error: directory '$dir' does not exist" 1>&2
+	exit 1
+    fi
+}
+
+
+function dieIfNoSuchFile {
+    local file="$1"
+    local prefixMsg="$2"
+    if [ ! -f "$file" ]; then
+	echo "${prefixMsg}Error: file '$file' does not exist" 1>&2
+	exit 1
+    fi
+}
+
+
+
+#
+# does nothing if the dir already exists, tries to
+# create it and stops with an error if it didn't work.
+#
+function mkdirSafe {
+    local dir="$1"
+    local prefixMsg="$2"
+    if [ ! -d "$dir" ]; then
+	mkdir "$dir"
+	if [ $? -ne 0 ]; then
+	    echo "${prefixMsg}Error: Can not create '$dir'" 1>&2
+	    exit 1
+	fi
+    fi
+}

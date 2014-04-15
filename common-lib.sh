@@ -126,6 +126,45 @@ function execInDir {
 
 
 
+#
+# assigns a variable with the name "$name" (same as un the parameter file), so that
+# it does not need to be called as myvar=$(readFromParamFile ...), because in this
+# case the function would not be able to make the calling script die.
+#
+function readFromParamFile {
+    local file="$1"
+    local name="$2"
+    local errMsgPrefix="$3"
+    local sepa="$4"
+    if [ -z "$sepa" ]; then
+	sepa="="
+    fi
+    dieIfNoSuchFile "$file"
+    res=$(grep "^$name$sepa" "$file" | cut -d "$sepa" -f 2- | tail -n 1)
+    if [ -z "$res" ]; then
+	echo "${errMsgPrefix}Error: parameter '$name' not found in parameter file '$file'" 1>&2
+	exit 14
+    fi
+    eval "$name=\"$res\""
+}
+
+
+#
+# runs the command provided with eval and die if the return status is not zero
+#
+function evalSafe {
+    local command="$1"
+    local errMsgPrefix="$2"
+    eval "$command"
+    code=$?
+    if [ $code -ne 0 ]; then
+	echo "${errMsgPrefix}Error: command '$command' returned with error code $code" 1>&2
+	exit 1
+    fi
+}
+
+
+
 # global variable(s) initialization
 
 #export ___ERW_BASH_UTILS_COMMON_LIB___=1
