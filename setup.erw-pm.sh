@@ -1,13 +1,11 @@
-#!/bin/bash
-
-# Important: This script must be sourced (not only called) from the
-# directory where it is located.
-
-export ERW_BASH_COMMONS_PATH="$(pwd)"
-source $ERW_BASH_COMMONS_PATH/common-lib.sh
+#
+# EM April 14 (update)
+#
+# Remark: special case because this is the project which contains the erw-pm system.
+# ERW_BASH_COMMONS_PATH should have already been initialized.
+#
+if [ -z "$ERW_BASH_COMMONS_PATH" ]; then # normally never!
+    echo "Warning: ERW_BASH_COMMONS_PATH is not initialized, calling init-erw-pm.sh"
+    source ./init-erw-pm.sh . # assuming we are in the right directory and the call was sourced (?)
+fi
 addToEnvVar "$ERW_BASH_COMMONS_PATH" PATH ":"
-currentPath="$(pwd)"
-cd "$ERW_BASH_COMMONS_PATH/.."
-addToEnvVar "$(pwd)" ERW_PM_REPO ":"
-cd "$currentPath"
-addToEnvVar erw-bash-commons ERW_PM_ACTIVE ":"

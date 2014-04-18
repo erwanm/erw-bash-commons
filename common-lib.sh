@@ -1,15 +1,13 @@
 #!/bin/bash
 # EM Feb 2014
 #
-# The setup script for erw-bash-commons must have been called before
-# using this library.
-#
 # This a library of bash functions; to use any of these the calling
 # script must "source" this library.
 #
 #
 
-
+libName=$(basename "$BASH_SOURCE")
+[ "$BASH_SOURCE" != "$0" ] || echo "$libName: Warning: it seems that this library is called normally instead of being sourced" 1>&2
 
 
 # args: 
@@ -143,7 +141,7 @@ function readFromParamFile {
     res=$(grep "^$name$sepa" "$file" | cut -d "$sepa" -f 2- | tail -n 1)
     if [ -z "$res" ]; then
 	echo "${errMsgPrefix}Error: parameter '$name' not found in parameter file '$file'" 1>&2
-	exit 14
+	exitOrReturnErrorCode 14
     fi
     eval "$name=\"$res\""
 }
@@ -159,10 +157,67 @@ function evalSafe {
     code=$?
     if [ $code -ne 0 ]; then
 	echo "${errMsgPrefix}Error: command '$command' returned with error code $code" 1>&2
-	exit 1
+	exitOrReturnError 1
     fi
 }
 
+
+#
+# returns 0 only if the current script is sourced from the very first
+# level, i.e. when variables modifications in the first-level script
+# apply globally and a call to "exit" in the first-level script would
+# end the bash session (1 otherwise).  
+#
+# Remark: if a sub-script is called without "source" somewhere in the
+# stack of calls, this function still considers that it is sourced
+# even though it actually operates in a sub-shell.
+#
+#
+# OBSOLETE (version 1) returns 0 only if the current script is
+# sourced at any level, i.e. if "source" appears at any level in the
+# function call stack.  Remark: the fact that a library has been
+# sourced and one of its function is used anywhere does not mean that
+# it is sourced, since the function is usually executed in a
+# non-sourced context and not in the library where it was defined.
+#
+#
+function isSourced {
+# VERSION 1: return true if "source" is at any level
+#    local size=${#FUNCNAME[@]}
+#    local foundSource=1
+#    for i in $(seq 1 $size); do
+#	echo "DEBUG isSourced: FUNCNAME[$i]=${FUNCNAME[$i]}" 1>&2
+#	if [ "${FUNCNAME[$i]}" == "source" ]; then
+#	    foundSource=0
+#	fi
+#    done
+#    return $foundSource
+# VERSION 2: return true only if "source" is in the last element of the stack, i.e. the very first call was sourced
+    local lastFunc=${#FUNCNAME[@]}
+    lastFunc=$(( $lastFunc - 1 )) # the array seems to be indexed from 0 to N-1
+    if [ "${FUNCNAME[$lastFunc]}" == "source" ]; then
+	return 0
+	else
+	return 1
+    fi
+}
+
+
+#
+# stops the execution either by "return" or "exit" depending on whether the script is being sourced or not.
+#
+function exitOrReturnError {
+    local errCode=${1:-1}
+#    if [ "${BASH_SOURCE[0]}" == "$0" ] ; then # wrong inside a function called from outside (${BASH_SOURCE[0]} is this lib name, not the calling script)
+    if isSourced; then
+#	echo "DEBUG: return: ${FUNCNAME[1]}" 1>&2
+       return $errCode
+    else
+#	echo "DEBUG: exit: ${FUNCNAME[1]}" 1>&2
+        exit $errCode
+#	return $errCode
+    fi
+}
 
 
 # global variable(s) initialization

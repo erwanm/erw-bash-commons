@@ -1,15 +1,14 @@
 #!/bin/bash
 # EM Feb 2014
 #
-# The setup script for erw-bash-commons must have been called before
-# using this library.
-#
 # This a library of bash functions; to use any of these the calling
 # script must "source" this library.
 #
 #
+source $(dirname "$BASH_SOURCE")/common-lib.sh
 
-source $ERW_BASH_COMMONS_PATH/common-lib.sh
+libName=$(basename "$BASH_SOURCE")
+[ "$BASH_SOURCE" != "$0" ] || echo "$libName: Warning: it seems that this library is called normally instead of being sourced" 1>&2
 
 # args: 
 # STDIN = 
@@ -69,13 +68,13 @@ function linkAbsolutePath {
 		    ln -s $targetDir/$(basename "$1") $(basename "$dest")
 		else
 		    echo "Error: dest dir $dir does not exist" 1>&2
-		    exit 1
+		    exitOrReturnError 1
 		fi
 	    fi
 	    cd "$thisDir"
 	else
 	    echo "Error: target file $1 does not exist" 1>&2
-	    exit 1
+	    exitOrReturnError 1
 	fi
 	shift
     done
@@ -103,7 +102,7 @@ function dieIfNoSuchDir {
     local prefixMsg="$2"
     if [ ! -d "$dir" ]; then
 	echo "${prefixMsg}Error: directory '$dir' does not exist" 1>&2
-	exit 1
+	exitOrReturnError 1
     fi
 }
 
@@ -113,7 +112,7 @@ function dieIfNoSuchFile {
     local prefixMsg="$2"
     if [ ! -f "$file" ]; then
 	echo "${prefixMsg}Error: file '$file' does not exist" 1>&2
-	exit 1
+	exitOrReturnError 1
     fi
 }
 
@@ -130,7 +129,7 @@ function mkdirSafe {
 	mkdir "$dir"
 	if [ $? -ne 0 ]; then
 	    echo "${prefixMsg}Error: Can not create '$dir'" 1>&2
-	    exit 1
+	    exitOrReturnError 1
 	fi
     fi
 }
