@@ -19,38 +19,33 @@ setupFileName="setup.erw-pm.sh"
 # these functions.
 #
 #
-# TODO: update explanations!
+# Principle: the "system" must be initialized by a sourced call to
+# init-erw-pm.sh, typically in ~/.bashrc:
 #
-# Principle: the ERW_PM_REPO env. variable must be set from outside,
-# typically in ~/.bashrc [update: in init-erw-pm.sh ].  It can contain
-# several paths separated by ':'. Any time a project A depends on
-# project B (indicated by the fact that the dependency file
-# $defaultDepFilename in project A contains the name "B"), it should
-# call ensureProjectDeps in its setup script.  The function will (1)
-# check if the project is already active (belongs to the list
-# contained in en var ERW_PM_ACTIVE); (2) if not, it will search the
-# directories in ERW_PM_REPO, setup the project if found or return
-# with an error if it can not find a subdirectory B.
+# source path/to/erw-bash-commons/init-erw-pm.sh
 #
-# The setup script must:
+# This will source all the needed libraries (including the present
+# one) and set the env. var. ERW_BASH_COMMONS_PATH. Then the functions
+# needed become available at all time, especially "erw-pm", which is
+# the main one (call erw-pm help to see the options).  The directory
+# which contains erw-bash-commons is autimatically added to the list
+# of repositories stored in the env var ERW_PM_REPO; other
+# repositories must be added manually, e.g. with 
 #
-# - source this library (from the directory where it is located);
+# erw-pm addrepo path/to/repo
 #
-# - call ensureProjectDeps (recommended even if the project does not
-#   depend on any other, but not needed);
+# Every project P must contain a file $setupFileName which makes any
+# needed initializations, in particular activating any required
+# dependency (i.e. others project which need to be active for the
+# project P to work), setting the path in PATH, etc. Example:
 #
-# - update the ERW_PM_ACTIVE env var in the following way: 
-#   addToEnvVar $projectName ERW_PM_ACTIVE :
+# erw-pm activate Text-TextAnalytics
+# erw-pm activate TreeTagger
+# erw-pm activate erw-R-commons
+# erw-pm activate perl-libraries
+# addToEnvVar "$(pwd)/bin" PATH :
 #
-# Any call to a setup script must be done with "source" and from the
-# directory where the setup script is located.
-#
-# In order to use this PM system the project erw-bash-commons (which
-# contains this library) must have been initialized (the setup script
-# sourced from its own directory), and the ERW_PM_REPO should have
-# been set (the setup script will automatically add the repo in which
-# it is located, other repos have to be added manually)
-#
+# 
 #
 
 
@@ -93,7 +88,7 @@ function activateProjectIfNeeded {
 
 
 function activateProjectDir {
-    echo "DEBUG activateProjectIfNeeded: $@" 1>&2
+#    echo "DEBUG activateProjectDir: $@" 1>&2
     local dir=$(absolutePath "$1")
     projectId=$(basename "$dir")
     export TRUC=machin2
@@ -125,6 +120,8 @@ function erw-pm {
 	    commandActivate "$@";;
         "list" )
 	    commandList "$@";;
+        "help" )
+            commandUsage;;
         * )
             echo "$commandId: error, invalid command '$command'" 1>&2
             commandUsage 1>&2
