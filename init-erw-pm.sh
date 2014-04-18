@@ -32,10 +32,10 @@ printHelp=
 while getopts 'h' option ; do 
     case $option in
 	"h" ) usage
- 	      exitOrReturnError 0;;
+	    exitOrReturnError 0 ;;
 	"?" ) 
 	    echo "Error, unknow option." 1>&2
-            printHelp=1;;
+	    printHelp=1;;
     esac
 done
 shift $(($OPTIND - 1))

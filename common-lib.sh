@@ -141,7 +141,7 @@ function readFromParamFile {
     res=$(grep "^$name$sepa" "$file" | cut -d "$sepa" -f 2- | tail -n 1)
     if [ -z "$res" ]; then
 	echo "${errMsgPrefix}Error: parameter '$name' not found in parameter file '$file'" 1>&2
-	exitOrReturnErrorCode 14
+	exitOrReturnError 1
     fi
     eval "$name=\"$res\""
 }
@@ -166,11 +166,15 @@ function evalSafe {
 # returns 0 only if the current script is sourced from the very first
 # level, i.e. when variables modifications in the first-level script
 # apply globally and a call to "exit" in the first-level script would
-# end the bash session (1 otherwise).  
+# end the bash session (1 otherwise).
 #
 # Remark: if a sub-script is called without "source" somewhere in the
 # stack of calls, this function still considers that it is sourced
 # even though it actually operates in a sub-shell.
+#
+# Remark: does not return true if a function is called at the first
+# level, because in this case nothing is sourced, even though the
+# effect is the same. (maybe also in other cases?)
 #
 #
 # OBSOLETE (version 1) returns 0 only if the current script is
@@ -203,19 +207,55 @@ function isSourced {
 
 
 #
-# stops the execution either by "return" or "exit" depending on whether the script is being sourced or not.
+# stops the execution with the appropriate method depending on
+# whether the script is being sourced or not.
+# 
+# After many tests, I realized that it is impossible to use either
+# return or exit (in a function) depending on whether the script is
+# sourced/executed at the session level or executed normally, simply
+# because, when executed at the session level (which is not so simple
+# to detect in an external function btw):
+#
+# - exit closes the session if executed at the session level
+# - return only returns from the function to the caller, which keeps
+#   executing the rest of the script.
+# 
+# Therefore, if executed at the session level, there is no other way
+# than killing the process (which is ok, it's different from the
+# session process). But then there is the problem of not being able to
+# return an error status, in case the caller script itself has been
+# called by another script which tests its return code; however I
+# don't see any use case for that, so I'll assume that's the best I
+# can do about it.
+#
+# The $PS1 test (bash prompt, which is undefined in non-interactive
+# mode except of course at session level) seems to be the best choice
+# to test the execution at bash session level, although what it does
+# is actually only testing whether the script is being executed in the
+# same context as an interactive shell, which means that exiting would
+# close the terminal. It is possible to check if a "source" call is in
+# the functions stack (see "isSourced"), but not to test (or I don't
+# know how) whether a previously sourced function is being executed at
+# the session level (in which case there is no "source" in the
+# functions stack).
+#
+# kept commented code for historical reasons (more or less).
 #
 function exitOrReturnError {
     local errCode=${1:-1}
-#    if [ "${BASH_SOURCE[0]}" == "$0" ] ; then # wrong inside a function called from outside (${BASH_SOURCE[0]} is this lib name, not the calling script)
-    if isSourced; then
+    [[ $PS1 ]] && kill -SIGINT $$ || exit $errCode
+#   version N.... wrong again:
+#    [[ $PS1 ]] && return $errCode 2>/dev/null || exit $errCode
+#
+##    if [ "${BASH_SOURCE[0]}" == "$0" ] ; then # wrong inside a function called from outside (${BASH_SOURCE[0]} is this lib name, not the calling script)
+#    if isSourced; then
 #	echo "DEBUG: return: ${FUNCNAME[1]}" 1>&2
-       return $errCode
-    else
+#       return $errCode
+#    else
 #	echo "DEBUG: exit: ${FUNCNAME[1]}" 1>&2
-        exit $errCode
+#        exit $errCode
 #	return $errCode
-    fi
+#    fi
 }
 
 

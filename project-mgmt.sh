@@ -125,7 +125,7 @@ function erw-pm {
         * )
             echo "$commandId: error, invalid command '$command'" 1>&2
             commandUsage 1>&2
-	    exitOrReturnError $invoked
+	    exitOrReturnError 1
     esac
 }
 
@@ -136,7 +136,7 @@ function commandAddRepo {
     if [ -z "$1" ]; then
 	echo "$commandId addrepo: error, missing argument" 1>&2
 	commandUsage 1>&2
-	exitOrReturnError $invoked
+	exitOrReturnError 1
     fi
     while [ ! -z "$1" ]; do
         local dir=$(absolutePath "$1")
@@ -153,7 +153,7 @@ function commandActivate {
     if [ -z "$1" ]; then
 	echo "$commandId activate: error, missing argument" 1>&2
 	commandUsage 1>&2
-	exitOrReturnError $invoked
+	exitOrReturnError 1
     fi
     while [ ! -z "$1" ]; do
 	activateProjectIfNeeded "$1"
@@ -189,7 +189,7 @@ function commandList {
     fi
     if [ ! -z "$printHelp" ]; then
 	commandUsage 1>&2
-	exitOrReturnError $invoked
+	exitOrReturnError 1
     fi
 
     local repos=$(echo "$ERW_PM_REPO" | sed "s/:/ /g")
