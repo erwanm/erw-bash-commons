@@ -56,42 +56,47 @@ setupFileName="setup.erw-pm.sh"
 
 
 
-
 #
-# reads "projects" names from STDIN (one by line) and checks that
-# there is a directory with each name in the ERW_PM_REPO env var.
-# optionally if extra directories are provided as arguments they will
-# also be checked (actually before) in the same way as the any dir in
+# activateProjectIfNeeded <project> [<extra repo1> [ <extra repo2> ...] ]
+#
+# if <project> is not already active, checks that there is a directory
+# named <project> in at least one of the directories in ERW_PM_REPO
+# env var and then activates it.
+
+#  Optionally if extra directories are provided as arguments they will
+# also be checked (actually before) in the same way as any dir in
 # ERW_PM_REPO.
 #
 #
-function activateProjectsIfNeeded {
-    local currentDir=$(pwd)
+function activateProjectIfNeeded {
+    local projectName="$1"
+    shift
+    local currentDir=$PWD
     local activeProjects=$(echo "$ERW_PM_ACTIVE" | sed "s/:/ /g")
     local repos=$(echo "$ERW_PM_REPO" | sed "s/:/ /g")
     repos="$@$repos"
-#    echo "activateProjectsIfNeeded repos='$repos'" 1>&2
-    while read projectName; do
-#	echo "activateProjectsIfNeeded: looking for '$projectName'" 1>&2
-	memberList "$projectName" "$activeProjects"
-	if [ $? -ne 0 ]; then # if not already active
-#	    echo "activateProjectsIfNeeded: '$projectName' not active yet" 1>&2
-	    local projDir=$(searchEntryInDirList "$projectName" "$repos" ":")
-	    if [ -z "$projDir" ]; then # not found in the repositories
-		echo "Error, missing dependency: no directory '$projectName' found in the list of repositories '$repos'" 1>&2
-		exitOrReturnError 1 ### HALT ###
-	    else
-#		echo "activateProjectsIfNeeded: found '$projectName' dir in '$projDir', activating it" 1>&2
-		activateProjectDir "$projDir"
-	    fi
+#    echo "activateProjectIfNeeded repos='$repos'" 1>&2
+#    echo "activateProjectIfNeeded: looking for '$projectName'" 1>&2
+    memberList "$projectName" "$activeProjects"
+    if [ $? -ne 0 ]; then # if not already active
+#	    echo "activateProjectIfNeeded: '$projectName' not active yet" 1>&2
+	local projDir=$(searchEntryInDirList "$projectName" "$repos" ":")
+	if [ -z "$projDir" ]; then # not found in the repositories
+	    echo "Error, missing dependency: no directory '$projectName' found in the list of repositories '$repos'" 1>&2
+	    exitOrReturnError 1 ### HALT ###
+	else
+#		echo "activateProjectIfNeeded: found '$projectName' dir in '$projDir', activating it" 1>&2
+	    activateProjectDir "$projDir"
 	fi
-    done
+    fi
 }
 
 
 function activateProjectDir {
+    echo "DEBUG activateProjectIfNeeded: $@" 1>&2
     local dir=$(absolutePath "$1")
     projectId=$(basename "$dir")
+    export TRUC=machin2
     addToEnvVar "$projectId" ERW_PM_ACTIVE :
     execInDir -s "$dir/$setupFileName"
 }
@@ -110,6 +115,7 @@ function commandUsage {
 
 
 function erw-pm {
+#    echo "DEBUG erw-pm: $@" 1>&2
     command="$1"
     shift 1
     case "$command" in
@@ -153,9 +159,9 @@ function commandActivate {
 	exitOrReturnError $invoked
     fi
     while [ ! -z "$1" ]; do
-	echo "$1"
+	activateProjectIfNeeded "$1"
 	shift
-    done | activateProjectsIfNeeded
+    done
 }
 
 

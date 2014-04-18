@@ -182,19 +182,18 @@ function evalSafe {
 #
 #
 function isSourced {
+    local lastFunc=${#FUNCNAME[@]}
+    lastFunc=$(( $lastFunc - 1 )) # the array seems to be indexed from 0 to N-1
 # VERSION 1: return true if "source" is at any level
-#    local size=${#FUNCNAME[@]}
 #    local foundSource=1
-#    for i in $(seq 1 $size); do
-#	echo "DEBUG isSourced: FUNCNAME[$i]=${FUNCNAME[$i]}" 1>&2
+#    for i in $(seq 1 $lastFunc); do
+#	echo "DEBUG isSourced: BASH_SOURCE[$i]=${BASH_SOURCE[$i]} ; FUNCNAME[$i]=${FUNCNAME[$i]}" 1>&2
 #	if [ "${FUNCNAME[$i]}" == "source" ]; then
 #	    foundSource=0
 #	fi
-#    done
+#   done
 #    return $foundSource
 # VERSION 2: return true only if "source" is in the last element of the stack, i.e. the very first call was sourced
-    local lastFunc=${#FUNCNAME[@]}
-    lastFunc=$(( $lastFunc - 1 )) # the array seems to be indexed from 0 to N-1
     if [ "${FUNCNAME[$lastFunc]}" == "source" ]; then
 	return 0
 	else
