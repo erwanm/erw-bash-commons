@@ -25,12 +25,12 @@ setupFileName="setup.erw-pm.sh"
 # source path/to/erw-bash-commons/init-erw-pm.sh
 #
 # This will source all the needed libraries (including the present
-# one) and set the env. var. ERW_BASH_COMMONS_PATH. Then the functions
-# needed become available at all time, especially "erw-pm", which is
-# the main one (call erw-pm help to see the options).  The directory
-# which contains erw-bash-commons is autimatically added to the list
-# of repositories stored in the env var ERW_PM_REPO; other
-# repositories must be added manually, e.g. with 
+# one). Then the functions needed become available at all time,
+# especially "erw-pm", which is the main one (call erw-pm help to see
+# the options).  The directory which contains erw-bash-commons is
+# automatically added to the list of repositories stored in the env
+# var ERW_PM_REPO; other repositories must be added manually,
+# e.g. with
 #
 # erw-pm addrepo path/to/repo
 #

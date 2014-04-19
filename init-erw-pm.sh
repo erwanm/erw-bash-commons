@@ -51,8 +51,9 @@ fi
 
 
 pushd "$projectPath" >/dev/null
-setEnvVar "$projectPath" "ERW_BASH_COMMONS_PATH"
+# next line not needed anymore: it is sufficient that the directory is in PATH, source will find the libs this way
+#setEnvVar "$projectPath" "ERW_BASH_COMMONS_PATH" 
+erw-pm activate "$projectId" # adds the current dir to PATH
 erw-pm addrepo ".."
-erw-pm activate "$projectId"
 popd  >/dev/null
 
