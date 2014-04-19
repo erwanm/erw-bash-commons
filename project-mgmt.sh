@@ -151,14 +151,15 @@ function commandAddRepo {
 #
 function commandActivate {
     if [ -z "$1" ]; then
-	echo "$commandId activate: error, missing argument" 1>&2
-	commandUsage 1>&2
-	exitOrReturnError 1
+	currentDir=$(basename "$PWD")
+	echo "$commandId activate: Warning: no argument provided, trying to activate current directory '$currentDir'" 1>&2
+	activateProjectIfNeeded "$currentDir"
+    else
+	while [ ! -z "$1" ]; do
+	    activateProjectIfNeeded "$1"
+	    shift
+	done
     fi
-    while [ ! -z "$1" ]; do
-	activateProjectIfNeeded "$1"
-	shift
-    done
 }
 
 
