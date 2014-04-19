@@ -74,13 +74,13 @@ function activateProjectIfNeeded {
 #    echo "activateProjectIfNeeded: looking for '$projectName'" 1>&2
     memberList "$projectName" "$activeProjects"
     if [ $? -ne 0 ]; then # if not already active
-#	    echo "activateProjectIfNeeded: '$projectName' not active yet" 1>&2
+#	echo "activateProjectIfNeeded: '$projectName' not active yet" 1>&2
 	local projDir=$(searchEntryInDirList "$projectName" "$repos" ":")
 	if [ -z "$projDir" ]; then # not found in the repositories
-	    echo "Error, missing dependency: no directory '$projectName' found in the list of repositories '$repos'" 1>&2
+	    echo "Error, missing project/dependency: no directory '$projectName' found in the list of repositories '$repos'" 1>&2
 	    exitOrReturnError 1 ### HALT ###
 	else
-#		echo "activateProjectIfNeeded: found '$projectName' dir in '$projDir', activating it" 1>&2
+#	    echo "activateProjectIfNeeded: found '$projectName' dir in '$projDir', activating it" 1>&2
 	    activateProjectDir "$projDir"
 	fi
     fi
@@ -93,6 +93,7 @@ function activateProjectDir {
     projectId=$(basename "$dir")
     export TRUC=machin2
     addToEnvVar "$projectId" ERW_PM_ACTIVE :
+#    echo "DEBUG activateProjectDir: execting $dir/$setupFileName" 1>&2
     execInDir -s "$dir/$setupFileName"
 }
 
@@ -150,6 +151,7 @@ function commandAddRepo {
 # TODO add option to prepend new repos
 #
 function commandActivate {
+#    echo "DEBUG: activate '$@'" 1>&2
     if [ -z "$1" ]; then
 	currentDir=$(basename "$PWD")
 	echo "$commandId activate: Warning: no argument provided, trying to activate current directory '$currentDir'" 1>&2
