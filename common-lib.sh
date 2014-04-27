@@ -139,12 +139,13 @@ function readFromParamFile {
     if [ -z "$sepa" ]; then
 	sepa="="
     fi
-    dieIfNoSuchFile "$file"
+    dieIfNoSuchFile "$file" "$errMsgPrefix"
     res=$(grep "^$name$sepa" "$file" | cut -d "$sepa" -f 2- | tail -n 1)
     if [ -z "$res" ]; then
 	echo "${errMsgPrefix}Error: parameter '$name' not found in parameter file '$file'" 1>&2
 	exitOrReturnError 1
     fi
+#    echo "DEBUG readFromParamFile: '$name'='$res'" 1>&2
     eval "$name=\"$res\""
 }
 
@@ -245,7 +246,14 @@ function isSourced {
 #
 function exitOrReturnError {
     local errCode=${1:-1}
-    [[ $PS1 ]] && kill -SIGINT $$ || exit $errCode
+#    [[ $PS1 ]] && kill -SIGINT $$ || exit $errCode
+    if [ -z "$PS1" ]; then
+#	echo "DEBUG exitOrReturnError: exit" 1>&2
+	exit $errCode
+    else
+#	echo "DEBUG exitOrReturnError: kill" 1>&2
+	kill -SIGINT $$
+    fi
 #   version N.... wrong again:
 #    [[ $PS1 ]] && return $errCode 2>/dev/null || exit $errCode
 #
