@@ -136,14 +136,19 @@ function readFromParamFile {
     local name="$2"
     local errMsgPrefix="$3"
     local sepa="$4"
+    local noWarningIfEmpty="$5"
     if [ -z "$sepa" ]; then
 	sepa="="
     fi
     dieIfNoSuchFile "$file" "$errMsgPrefix"
-    res=$(grep "^$name$sepa" "$file" | cut -d "$sepa" -f 2- | tail -n 1)
-    if [ -z "$res" ]; then
+    line=$(grep "^$name$sepa" "$file" | tail -n 1)
+    if [ -z "$line" ]; then
 	echo "${errMsgPrefix}Error: parameter '$name' not found in parameter file '$file'" 1>&2
 	exitOrReturnError 1
+    fi
+    res=$(echo "$line" | cut -d "$sepa" -f 2- )
+    if [ -z "$noWarningIfEmpty" ] && [ -z "$res" ]; then
+	echo "${errMsgPrefix}Warning: parameter '$name' is defined but empty in parameter file '$file'" 1>&2
     fi
 #    echo "DEBUG readFromParamFile: '$name'='$res'" 1>&2
     eval "$name=\"$res\""
