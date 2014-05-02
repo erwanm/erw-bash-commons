@@ -50,8 +50,10 @@ function searchEntryInDirList {
 # if $1 is a file only one target is permitted: creates a symlink $1 pointing to $2
 #
 function linkAbsolutePath {
-    thisDir=$(pwd)
-    dest="$1"
+    local thisDir=$(pwd)
+    local dest="$1"
+    local targetDir=
+    local dir=
     shift
     while [ ! -z "$1" ]; do # for every target file
 	if [ -e "$1" ]; then
@@ -60,12 +62,20 @@ function linkAbsolutePath {
 	    cd "$thisDir"
 	    if [ -d "$dest" ]; then
 		cd "$dest"
-		ln -s $targetDir/$(basename "$1")
+		if [ -e $(basename "$1") ]; then
+		    echo "Warning: '$(basename "$1")' already exists in '$dest'" 1>&2
+		else
+		    ln -s $targetDir/$(basename "$1")
+		fi
 	    else
 		dir=$(dirname "$dest")
 		if [ -e "$dir" ]; then
 		    cd "$dir"
-		    ln -s $targetDir/$(basename "$1") $(basename "$dest")
+		    if [ -e $(basename "$dest") ]; then
+			echo "Warning: '$(basename "$dest")' already exists in '$dir'" 1>&2
+		    else
+			ln -s $targetDir/$(basename "$1") $(basename "$dest")
+		    fi
 		else
 		    echo "Error: dest dir $dir does not exist" 1>&2
 		    exitOrReturnError 1
