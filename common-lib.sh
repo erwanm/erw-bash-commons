@@ -136,8 +136,8 @@ function readFromParamFile {
     local name="$2"
     local errMsgPrefix="$3"
     local sepa="$4"
-    local noWarningIfEmpty="$5"
-    local returnEmptyIfNotDefined="$6"
+    local noWarningIfEmpty="$5" # left empty => warning if defined but empty value
+    local returnThisValueIfNotDefined="$6" # left empty => error and exit if not defined
 
     if [ -z "$sepa" ]; then
 	sepa="="
@@ -145,11 +145,11 @@ function readFromParamFile {
     dieIfNoSuchFile "$file" "$errMsgPrefix"
     line=$(grep "^$name$sepa" "$file" | tail -n 1)
     if [ -z "$line" ]; then
-	if [ -z "$returnEmptyIfNotDefined" ]; then
+	if [ -z "$returnThisValueIfNotDefined" ]; then
 	    echo "${errMsgPrefix}Error: parameter '$name' not found in parameter file '$file'" 1>&2
 	    exitOrReturnError 1
 	else
-	    echo ""
+	    echo "$returnThisValueIfNotDefined"
 	fi
     else
 	res=$(echo "$line" | cut -d "$sepa" -f 2- )
