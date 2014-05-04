@@ -173,6 +173,7 @@ function commandList {
     local printActive=1
     local printInactive=1
     local printStatus=1
+    local printHelp=0
     OPTIND=1
     while getopts 'ia' option ; do 
 	case $option in
