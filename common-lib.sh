@@ -149,16 +149,17 @@ function readFromParamFile {
 	    echo "${errMsgPrefix}Error: parameter '$name' not found in parameter file '$file'" 1>&2
 	    exitOrReturnError 1
 	else
-	    echo "$returnThisValueIfNotDefined"
+#	    echo "DEBUG readFromParamFile: returning defaut value 'returnThisValueIfNotDefined'" 1>&2
+	    res="$returnThisValueIfNotDefined"
 	fi
     else
 	res=$(echo "$line" | cut -d "$sepa" -f 2- )
 	if [ -z "$noWarningIfEmpty" ] && [ -z "$res" ]; then
 	    echo "${errMsgPrefix}Warning: parameter '$name' is defined but empty in parameter file '$file'" 1>&2
 	fi
-#    echo "DEBUG readFromParamFile: '$name'='$res'" 1>&2
-	eval "$name=\"$res\""
     fi
+#    echo "DEBUG readFromParamFile: '$name'='$res'" 1>&2
+    eval "$name=\"$res\""
 }
 
 
