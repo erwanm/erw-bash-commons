@@ -1,0 +1,5 @@
+
+- opt activate -force: reloads setup scripts (including dependencies)
+  even if already loaded
+
+- opt reset (?)
