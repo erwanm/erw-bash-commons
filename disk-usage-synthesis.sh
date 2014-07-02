@@ -13,6 +13,7 @@ optOnlyFileThisSystem=" -x "
 percentageOccupied=
 localSize=
 indentLevel=
+sudoDu=
 
 function usage {
     echo "Usage: $progName [root directory]"
@@ -29,6 +30,7 @@ function usage {
     echo "  -s <size min[%]> min size for a subdir to be printed; can be an absolute "
     echo "     size or a percentage (of the total partition space, see also -o). If an"
     echo "     absolute size, must be expressed in the current unit (see -u)."
+    echo "      default value: $sizeMin."
     echo "     remark: the value (percentage or not) must be an integer."
     echo "  -o percentage of occupied space instead of total partition space."
     echo "  -r percentage of space in root dir instead of total partition space."
@@ -42,6 +44,7 @@ function usage {
     echo "     synhetic view of where the big files actually are located, and"
     echo "     as the interesting effect of making the percentage sizes consistent"
     echo "     with each other (that is, the sum cannot be higher than 100%)"
+    echo "  -S call 'du' with sudo"
     echo
     echo "     Warning: won't work if the directory spans over several partitions."
     echo
@@ -66,11 +69,12 @@ function convertToUnit {
 
 OPTIND=1
 printHelp=
-while getopts 'hld:s:u:ox' option ; do 
+while getopts 'hld:s:u:oxS' option ; do 
     case $option in
 	"h" ) usage
 	    exitOrReturnError 0 ;;
 	"u" ) unit=$OPTARG;;
+	"S" ) sudoDu=1;;
 	"d" ) depthMax=$OPTARG;;
 	"s" ) sizeMin=$OPTARG;;
 	"o" ) percentageOccupied=1;;
@@ -105,8 +109,12 @@ fi
 
 accuSubDirs=( 0 ) # will contain the total size of all subdirs for each currently studied levels
 lastAncestorLevel=0
+command="du --max-depth $depthMax $optOnlyFileThisSystem $rootDir"
+if [ ! -z "$sudoDu" ]; then
+    command="sudo $command"
+fi
 # no use of -B because it rounds up the value to the unit (e.g. 3k becomes 1G)
-du --max-depth $depthMax $optOnlyFileThisSystem $rootDir | while read duLine; do
+eval "$command" | while read duLine; do
     printIt=
     set -- $duLine
     size="$1"
