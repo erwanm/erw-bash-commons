@@ -132,7 +132,7 @@ function dieIfNoSuchFile {
 # does nothing if the dir already exists, tries to
 # create it and stops with an error if it didn't work.
 #
-function OBmkdirSafe {
+function mkdirSafe {
     local dir="$1"
     local prefixMsg="$2"
     if [ ! -d "$dir" ]; then
@@ -150,14 +150,19 @@ function OBmkdirSafe {
 #
 # - prints a warning if 'mountedFrom' already mounted to a different
 #   directory, does nothing if already mounted to 'mountTo'
-#
+# - quiet empty => prints info
 function mountSSH {
     local mountFrom="$1"
     local mountTo="$2"
     local prefixMsg="$3"
+    local quiet="$4"
+    if [ -z "$quiet" ]; then
+	echo "${prefixMsg}Info: mountSSH from '$mountFrom' to '$mountTo'"
+    fi
     mkdirSafe "$mountTo" "$mountSSH: "
     mtabLine=$(grep "$mountFrom" /etc/mtab) # already mounted?
     alreadyMounted=
+#    echo "debug 1 mtabLine='$mtabLine'"
     if [ ! -z "$mtabLine" ]; then
 	mountPoint=$(echo "$mtabLine" | cut -f 2 -d " ")
 	if [ "$mountPoint" -ne "$mountTo" ]; then
@@ -166,11 +171,12 @@ function mountSSH {
 	    alreadyMounted=1
 	fi
     fi
-    if [ ! -z "$alreadyMounted" ]; then
+    if [ -z "$alreadyMounted" ]; then
 	if [ $(ls -A "$mountTo" | wc -l) -gt 0 ]; then
 	    echo "${prefixMsg}Error: directory $mountPoint is not empty." 1>&2
 	    exitOrReturnError 1
 	else
+#	    echo "DEBUG: sshfs $mountFrom $mountTo" 1>&2
 	    sshfs "$mountFrom" "$mountTo"
 	fi
     fi
