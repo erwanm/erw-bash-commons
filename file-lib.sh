@@ -165,7 +165,8 @@ function mountSSH {
 #    echo "debug 1 mtabLine='$mtabLine'"
     if [ ! -z "$mtabLine" ]; then
 	mountPoint=$(echo "$mtabLine" | cut -f 2 -d " ")
-	if [ "$mountPoint" -ne "$mountTo" ]; then
+#	echo "debug mountPoint='$mountPoint' ; mountTo='$mountTo'" 1>&2
+	if [ "$mountPoint" != "$mountTo" ]; then
 	    echo "${prefixMsg}Warning: $mountFrom already mounted to $mountPoint" 1>&2
 	else
 	    alreadyMounted=1
