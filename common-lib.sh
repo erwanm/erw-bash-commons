@@ -138,6 +138,7 @@ function readFromParamFile {
     local sepa="$4"
     local noWarningIfEmpty="$5" # left empty => warning if defined but empty value
     local returnThisValueIfNotDefined="$6" # left empty => error and exit if not defined
+    local assignToThisNameInstead="$7" # if defined, $name is the name read from the file but the value is assigned to this name
 
     if [ -z "$sepa" ]; then
 	sepa="="
@@ -159,7 +160,11 @@ function readFromParamFile {
 	fi
     fi
 #    echo "DEBUG readFromParamFile: '$name'='$res'" 1>&2
-    eval "$name=\"$res\""
+    if [ -z "$assignToThisNameInstead" ]; then
+	eval "$name=\"$res\""
+    else
+	eval "$assignToThisNameInstead=\"$res\""
+    fi
 }
 
 

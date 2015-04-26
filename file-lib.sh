@@ -183,3 +183,32 @@ function mountSSH {
     fi
 }
 
+
+# creates a copy of the source dir where every subdir is created in the dest dir
+# and every file is symlinked to the source file.
+# the dest dir (root) must be created before.
+function cloneDir {
+    local source="$1"
+    local dest="$2"
+    local overwrite="$3"
+
+#    echo "DEBUG cloning $source to $dest"
+    for entry in "$source"/*; do
+        if [ -d "$entry" ]; then
+            name=$(basename "$entry")
+            mkdirSafe "$dest/$name" "$progName:$LINENO: "
+            cloneDir "$entry" "$dest/$name"
+        elif [ -f "$entry" ]; then
+            entryName=$(basename "$entry")
+            if [ ! -z "$overwrite" ] && [ -e "$dest/$entryName" ]; then
+                rm -f "$dest/$entryName"
+            fi
+            if [ ! -e "$dest/$entryName" ]; then
+                linkAbsolutePath "$dest" "$entry"
+            fi
+        else
+            echo "$progName: Warning cloneDir: $entry is neither a directory or a regular file, ignored" 1>&2
+        fi
+    done
+}
+

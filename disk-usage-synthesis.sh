@@ -19,7 +19,7 @@ function usage {
     echo "Usage: $progName [root directory]"
     echo
     echo "  Utility which prints the biggest sub-directories recursively according to"
-    echo "  the parameters provided. Bu default only prints the directories with a size"
+    echo "  the parameters provided. By default only prints the directories with a size"
     echo "  higher than $sizeMin, at a depth lower than $depthMax."
     echo "  If no argument is provided, processes the current dir."
     echo
@@ -44,11 +44,12 @@ function usage {
     echo "     synhetic view of where the big files actually are located, and"
     echo "     as the interesting effect of making the percentage sizes consistent"
     echo "     with each other (that is, the sum cannot be higher than 100%)"
+    echo "     TODO not great, maybe abort (not well specified, e.g. case of 1 subdir>t but not other others?)"
     echo "  -S call 'du' with sudo"
     echo
     echo "     Warning: won't work if the directory spans over several partitions."
     echo
-    echo " TODO: print owner, pretty print/opt no space before?, opt indent level"
+    echo " TODO: pretty print/opt no space before?, opt indent level"
 }
 
 
@@ -109,19 +110,17 @@ fi
 
 accuSubDirs=( 0 ) # will contain the total size of all subdirs for each currently studied levels
 lastAncestorLevel=0
+# no use of -B because it rounds up the value to the unit (e.g. 3k becomes 1G)
 command="du --max-depth $depthMax $optOnlyFileThisSystem $rootDir"
 if [ ! -z "$sudoDu" ]; then
     command="sudo $command"
 fi
-# no use of -B because it rounds up the value to the unit (e.g. 3k becomes 1G)
 eval "$command" | while read duLine; do
     printIt=
     set -- $duLine
     size="$1"
     shift
     dir="$@"
-    asPercentage=$( perl -e " printf('%4.1f\%', $size * 100 / $totalSpace); ")
-    sizeInUnit=$(convertToUnit $size)
     if [ ! -z "$localSize" ]; then
 	dirLevelS=$(echo "$dir" | sed 's:[^/]::g')
 	dirLevel=${#dirLevelS}
@@ -134,25 +133,19 @@ eval "$command" | while read duLine; do
 		accuSubDirs[$i]=0 # new slots
 	    done
 	    lastAncestorLevel=$parentLevel
-#	    echo "DEBUGX: " 1>&2
-#	    perl -e "print  'sizeInUnit + {accuSubDirs[$parentLevel]}';" 1>&2
-#	    echo 1>&2
-#	    perl -e "print  '$sizeInUnit + ${accuSubDirs[$parentLevel]}';" 1>&2
-#	    echo 1>&2
-#	    perl -e "print  $sizeInUnit + ${accuSubDirs[$parentLevel]};" 1>&2
-#	    echo 1>&2
-	    accuSubDirs[$parentLevel]=$(perl -e "print  $sizeInUnit + ${accuSubDirs[$parentLevel]};")
-#	    echo "after (1): lastAncestorLevel=$lastAncestorLevel; array=${accuSubDirs[@]}" 1>&2
+	    accuSubDirs[$parentLevel]=$(perl -e "print  $size + ${accuSubDirs[$parentLevel]};")
 	else # rolling back to parent dir (dirLevel can only be lastAncestorLevel +1, i.e. lastAncestorLevel = parentLevel)
 	        # we need to update the local size (substract subdirs size) and close the branch in the array
 	    if [ $dirLevel -gt 0 ]; then # not root: update parent level
-		accuSubDirs[$parentLevel]=$(perl -e "print ${accuSubDirs[$parentLevel]} + $sizeInUnit;")
+		accuSubDirs[$parentLevel]=$(perl -e "print ${accuSubDirs[$parentLevel]} + $size;")
 		lastAncestorLevel=$parentLevel
 	    fi
-	    sizeInUnit=$(perl -e "print  $sizeInUnit - ${accuSubDirs[$dirLevel]};" ) # substract size of subdirs from the total size for the current dir
+	    size=$(perl -e "print  $size - ${accuSubDirs[$dirLevel]};" ) # substract size of subdirs from the total size for the current dir
 #	    echo "after (2): lastAncestorLevel=$lastAncestorLevel; array=${accuSubDirs[@]}" 1>&2
 	fi
     fi
+    asPercentage=$( perl -e " printf('%4.1f\%', $size * 100 / $totalSpace); ")
+    sizeInUnit=$(convertToUnit $size)
     if [[ $sizeMin == *% ]]; then
 	intPart=${asPercentage%.*}
 	if [ $intPart -ge ${sizeMin%\%} ] ; then
@@ -171,15 +164,16 @@ done | tac | while read line; do
     dir=$(echo "$line" | cut -f 1)
     size=$(echo "$line" | cut -f 2)
     sizeP=$(echo "$line" | cut -f 3)
+    owner=$(stat -c "%U" "$dir")
     if [ ! -z "$indentLevel" ]; then
 	dirLevelS=$(echo "$dir" | sed 's:[^/]::g')
 	dirLevel=${#dirLevelS}
 	echo -n "$dirLevelS" | sed 's:/:   :g'
 	echo -ne "$(basename "$dir")"
+	echo -e "\t$owner\t$size\t$sizeP"
     else
-	echo -ne "$dir"
+	echo -e "$size\t$sizeP\t$owner\t$dir"
     fi
-    echo -e "\t$size\t$sizeP"
     lastDir="$dir"
 done
 
