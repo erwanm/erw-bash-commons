@@ -62,10 +62,10 @@ function linkAbsolutePath {
 	    cd "$thisDir"
 	    if [ -d "$dest" ]; then
 		cd "$dest"
-		if [ -e $(basename "$1") ]; then
+		if [ -e "$(basename "$1")" ]; then
 		    echo "Warning: '$(basename "$1")' already exists in '$dest'" 1>&2
 		else
-		    ln -s $targetDir/$(basename "$1")
+		    ln -s "$targetDir/$(basename "$1")"
 		fi
 	    else
 		dir=$(dirname "$dest")
@@ -74,7 +74,7 @@ function linkAbsolutePath {
 		    if [ -e $(basename "$dest") ]; then
 			echo "Warning: '$(basename "$dest")' already exists in '$dir'" 1>&2
 		    else
-			ln -s $targetDir/$(basename "$1") $(basename "$dest")
+			ln -s "$targetDir/$(basename "$1")" "$(basename "$dest")"
 		    fi
 		else
 		    echo "Error: dest dir $dir does not exist" 1>&2
