@@ -178,7 +178,10 @@ function mountSSH {
 	    exitOrReturnError 1
 	else
 #	    echo "DEBUG: sshfs $mountFrom $mountTo" 1>&2
-	    sshfs "$mountFrom" "$mountTo"
+	    timeout 15s sshfs "$mountFrom" "$mountTo"
+	    if [ $? -ne 0 ]; then
+		echo "Warning: sshfs '$mountFrom' '$mountTo' returned non-zero exit code or timed out" 1>&2
+	    fi
 	fi
     fi
 }
