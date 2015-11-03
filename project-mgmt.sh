@@ -91,10 +91,10 @@ function activateProjectDir {
 #    echo "DEBUG activateProjectDir: $@" 1>&2
     local dir=$(absolutePath "$1")
     projectId=$(basename "$dir")
-    export TRUC=machin2
-    addToEnvVar "$projectId" ERW_PM_ACTIVE :
+#    export TRUC=machin2
 #    echo "DEBUG activateProjectDir: execting $dir/$setupFileName" 1>&2
     execInDir -s "$dir/$setupFileName"
+    addToEnvVar "$projectId" ERW_PM_ACTIVE :
 }
 
 
