@@ -47,6 +47,7 @@ function usage {
   echo "         <script> <tasks list file>"
   echo "       where <tasks list file> contains <M> tasks, one by line (M <=N, with <N> the"
   echo "       number of tasks per batch; see -b)."
+  echo "       Important: the task file to run is <f>.running"
   echo "       Remark 1: <script> can be a full path or a script available in the envirnment "
   echo "               variable PATH."
   echo "       Remark 2: using quote arguments can be provided to the script, e.g.:"
@@ -140,7 +141,7 @@ function getTask {
     fi
 
 #    echo "$comm  | head -n $nb |  sed 's:^:$workDir:g'" 1>&2
-    evalSafe "$comm  | head -n $nb |  sed 's:^:$workDir:g'" "$progName,$LINENO: "
+    evalSafe "$comm  | head -n $nb |  sed 's:^:$workDir/:g'" "$progName,$LINENO: "
 }
 
 
@@ -247,6 +248,8 @@ while [ 1 == 1 ]; do
     while [ $nbWait -gt 0 ] && [ $nbRun -lt $nbSlots ]; do # need to start a new task
 	nextBatch=$(mktemp)
         getTask "old" "wait" "$batchSize" >$nextBatch
+#	echo "DEBUG: '$nextBatch'" 1>&2
+#	exit 4
         nbBatch=$(cat "$nextBatch" | wc -l)
         cat "$nextBatch" | while read f; do
             t=$(timeElapsedSinceFileWasModified "$f")
@@ -264,7 +267,9 @@ while [ 1 == 1 ]; do
             mv  "$f.processing" "$f.running"
         done
 	if [ -z "$runScript" ]; then
-	    bash "$nextBatch" &
+	    cat "$nextBatch" | while read taskFile; do
+		bash "$taskFile.running" &
+	    done
 	else
 	    eval "$runScript \"$nextBatch\""
 	fi
