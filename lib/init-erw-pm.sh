@@ -14,7 +14,7 @@ source $(dirname "$BASH_SOURCE")/project-mgmt.sh
 progName=$(basename "$BASH_SOURCE")
 isSourced || echo "$progName: Warning: it seems that this script is called normally instead of being sourced" 1>&2
 
-projectPath=$(dirname "$BASH_SOURCE")
+projectPath=$(dirname "$BASH_SOURCE")/.. # .. because this script is under subdir 'lib'
 projectPath=$(absolutePath "$projectPath")
 projectId=$(basename "$projectPath")
 

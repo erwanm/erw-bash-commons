@@ -43,7 +43,7 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF S
 DAMAGE.
 " />
 <link id="faviconLink" rel="shortcut icon" href="favicon.ico">
-<title>TiddlyWiki — a non-linear personal web notebook</title>
+<title>erw-bash-commons — Some bash libraries and scripts</title>
 <!--~~ This is a Tiddlywiki file. The points of interest in the file are marked with this pattern ~~--><!--~~ Raw markup ~~-->
 
 </head>
@@ -115,7 +115,36 @@ Error message and password prompt
 <noscript>
 <div id="splashArea">
 
-<div class=" tc-reveal" hidden="true"></div>
+<p>This <a class="tc-tiddlylink-external" href="http://tiddlywiki.com" target="_blank">TiddlyWiki</a> contains the following tiddlers:</p><p><ul>
+
+<li>$:/core</li>
+
+<li>$:/DefaultTiddlers</li>
+
+<li>$:/isEncrypted</li>
+
+<li>$:/SiteSubtitle</li>
+
+<li>$:/SiteTitle</li>
+
+<li>$:/state/showeditpreview</li>
+
+<li>$:/state/sidebar</li>
+
+<li>$:/StoryList</li>
+
+<li>$:/temp/info-plugin</li>
+
+<li>$:/themes/tiddlywiki/snowwhite</li>
+
+<li>$:/themes/tiddlywiki/vanilla</li>
+
+<li>erw-bash-commons</li>
+
+<li>erw-pm</li>
+
+</ul>
+</p>
 
 
 
@@ -6173,8 +6202,41 @@ Error message and password prompt
     }
 }</pre>
 </div>
+<div created="20160519155247420" modified="20160519155250494" title="$:/DefaultTiddlers">
+<pre>[[erw-bash-commons]]
+</pre>
+</div>
 <div title="$:/isEncrypted">
 <pre>no</pre>
+</div>
+<div created="20160519154536175" modified="20160519154600398" title="$:/SiteSubtitle">
+<pre>Some bash libraries and scripts</pre>
+</div>
+<div created="20160519154530025" modified="20160519154532494" title="$:/SiteTitle">
+<pre>erw-bash-commons</pre>
+</div>
+<div created="20160519154707251" modified="20160519154707251" title="$:/state/showeditpreview">
+<pre>yes</pre>
+</div>
+<div created="20160519160321906" modified="20160519160321906" title="$:/state/sidebar">
+<pre>no</pre>
+</div>
+<div list="erw-bash-commons erw-pm" title="$:/StoryList">
+<pre></pre>
+</div>
+<div plugin-type="info" title="$:/temp/info-plugin" type="application/json">
+<pre>{
+    &quot;tiddlers&quot;: {
+        &quot;$:/info/browser&quot;: {
+            &quot;title&quot;: &quot;$:/info/browser&quot;,
+            &quot;text&quot;: &quot;yes&quot;
+        },
+        &quot;$:/info/node&quot;: {
+            &quot;title&quot;: &quot;$:/info/node&quot;,
+            &quot;text&quot;: &quot;no&quot;
+        }
+    }
+}</pre>
 </div>
 <div author="JeremyRuston" core-version="&gt;=5.0.0" dependents="$:/themes/tiddlywiki/vanilla" description="Emphasises individual tiddlers" name="Snow White" plugin-type="theme" title="$:/themes/tiddlywiki/snowwhite" type="application/json" version="5.1.11">
 <pre>{
@@ -6280,6 +6342,55 @@ Error message and password prompt
         }
     }
 }</pre>
+</div>
+<div created="20160519154744507" modified="20160519160955629" title="erw-bash-commons">
+<pre>
+
+[[erw-bash-commons]] contains a set of Bash libraries and scripts.
+
+!! Content
+
+* Libraries
+** various common functions
+** a very basic &quot;package management system&quot; called [[erw-pm]]
+* Scripts
+** [[init-erw-pm.sh]]: initializes [[erw-pm]]
+** [[task-distrib-daemon.sh]]: a basic system for starting distributed tasks (parallel computation of independent scripts)
+** [[disk-usage-synthesis.sh]]: a tool to show some statistics about where the biggest amount of space is used on a disk.
+* Misc
+** Several examples of setup files for [[erw-pm]]</pre>
+</div>
+<div created="20160519155303467" modified="20160519160721516" title="erw-pm">
+<pre>
+Very basic package management system in Bash. The main goal is to setup only the required environment variables for a given package, including (simple) dependencies. Typically the operations consist in adding ``&lt;package&gt;/bin`` to  the Bash env variable ``$PATH``.
+
+!! Features
+
+* Every package is initialized using a specfic Bash script called ``setup.erw-pm``
+** Requires that [[init-erw-pm.sh]] has been sourced before.
+* A package can have dependencies: the system checks that either the require package is already active, or activates it. 
+
+
+!! Usage
+
+!!! Initialization
+
+# source [[init-erw-pm.sh]] (i.e. execute with the ``source`` command, so that it is executed in the current shell and not a sub-shell)
+# add the path(s) of the repo(s) where the packages are located
+
+Example:
+
+```
+   source /CLG/Erwan/projects/erw-bash-commons/init-erw-pm.sh
+   erw-pm addrepo /experimental/Erwan/local/projects
+   erw-pm addrepo /CLG/Erwan/projects
+```
+
+!!! Commands
+
+* A package is activated with ``erw-pm.sh activate &lt;package&gt;``
+* Packages must be stored in one or several &quot;repositories&quot; added to the list with ``erw-pm.sh addrepo &lt;path&gt;``.
+</pre>
 </div>
 
 </div>
