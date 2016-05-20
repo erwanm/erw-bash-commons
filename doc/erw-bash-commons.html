@@ -6343,9 +6343,8 @@ Error message and password prompt
     }
 }</pre>
 </div>
-<div created="20160519154744507" modified="20160519160955629" title="erw-bash-commons">
+<div created="20160519154744507" modified="20160520163156211" title="erw-bash-commons">
 <pre>
-
 [[erw-bash-commons]] contains a set of Bash libraries and scripts.
 
 !! Content
@@ -6354,15 +6353,13 @@ Error message and password prompt
 ** various common functions
 ** a very basic &quot;package management system&quot; called [[erw-pm]]
 * Scripts
-** [[init-erw-pm.sh]]: initializes [[erw-pm]]
 ** [[task-distrib-daemon.sh]]: a basic system for starting distributed tasks (parallel computation of independent scripts)
 ** [[disk-usage-synthesis.sh]]: a tool to show some statistics about where the biggest amount of space is used on a disk.
 * Misc
 ** Several examples of setup files for [[erw-pm]]</pre>
 </div>
-<div created="20160519155303467" modified="20160519160721516" title="erw-pm">
-<pre>
-Very basic package management system in Bash. The main goal is to setup only the required environment variables for a given package, including (simple) dependencies. Typically the operations consist in adding ``&lt;package&gt;/bin`` to  the Bash env variable ``$PATH``.
+<div created="20160519155303467" modified="20160520163202104" title="erw-pm">
+<pre>Very basic package management system in Bash. The main goal is to setup only the required environment variables for a given package, including (simple) dependencies. Typically the operations consist in adding ``&lt;package&gt;/bin`` to  the Bash env variable ``$PATH``.
 
 !! Features
 
@@ -6381,7 +6378,7 @@ Very basic package management system in Bash. The main goal is to setup only the
 Example:
 
 ```
-   source /CLG/Erwan/projects/erw-bash-commons/init-erw-pm.sh
+   source /CLG/Erwan/projects/erw-bash-commons/lib/init-erw-pm.sh
    erw-pm addrepo /experimental/Erwan/local/projects
    erw-pm addrepo /CLG/Erwan/projects
 ```
