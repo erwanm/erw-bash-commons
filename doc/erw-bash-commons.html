@@ -6344,8 +6344,7 @@ Error message and password prompt
 }</pre>
 </div>
 <div created="20160519154744507" modified="20160520163156211" title="erw-bash-commons">
-<pre>
-[[erw-bash-commons]] contains a set of Bash libraries and scripts.
+<pre>[[erw-bash-commons]] contains a set of Bash libraries and scripts.
 
 !! Content
 
@@ -6358,17 +6357,20 @@ Error message and password prompt
 * Misc
 ** Several examples of setup files for [[erw-pm]]</pre>
 </div>
-<div created="20160519155303467" modified="20160520163202104" title="erw-pm">
-<pre>Very basic package management system in Bash. The main goal is to setup only the required environment variables for a given package, including (simple) dependencies. Typically the operations consist in adding ``&lt;package&gt;/bin`` to  the Bash env variable ``$PATH``.
+<div created="20160519155303467" modified="20160522172010728" title="erw-pm">
+<pre>
+! Overview
 
-!! Features
+Very basic package management system in Bash. The main goal is to setup only the required environment variables for a given package, including (simple) dependencies. Typically the operations consist in adding ``&lt;package&gt;/bin`` to  the Bash env variable ``$PATH``, but any complex initialization (make, etc.) is supported.
 
-* Every package is initialized using a specfic Bash script called ``setup.erw-pm``
-** Requires that [[init-erw-pm.sh]] has been sourced before.
+!!! Features
+
 * A package can have dependencies: the system checks that either the require package is already active, or activates it. 
+* The main interest is the ability to &quot;switch on&quot; packages on demand using Bash environment variables, instead of keeping many environment variables active all the time at the risk of confusion (or having to manually set them up every time).
+* Remark: the system can be used to work with two versions of the same software in different sessions on the same machine, especially with a file versioning system. 
+** example: branch ``mysoft-stable`` contains the stable branch. ``mysoft-dev`` contains an unstable branch which is under development. A session initialized with the former package can use  ``mysoft-stable`` in production while another session where the latter package is active can be used to test the dev version.
 
-
-!! Usage
+!!! Usage
 
 !!! Initialization
 
@@ -6383,9 +6385,17 @@ Example:
    erw-pm addrepo /CLG/Erwan/projects
 ```
 
+!!! Activating a package
+
+* A package is activated with ``erw-pm activate &lt;package&gt;``
+** Every package is initialized using a specfic Bash script called ``setup.erw-pm``
+** Requires that [[init-erw-pm.sh]] has been sourced before.
+
+
 !!! Commands
 
-* A package is activated with ``erw-pm.sh activate &lt;package&gt;``
+* see the list of available packages: ``erw-pm.sh list``
+* see the list of available packages: ``erw-pm.sh list -a``
 * Packages must be stored in one or several &quot;repositories&quot; added to the list with ``erw-pm.sh addrepo &lt;path&gt;``.
 </pre>
 </div>
