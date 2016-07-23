@@ -7,6 +7,7 @@ source file-lib.sh
 
 startDate=$(date +"%y.%m.%d %H:%M")
 progName=$(basename "$BASH_SOURCE")
+nbCores=8
 
 function usage {
   echo
@@ -16,6 +17,7 @@ function usage {
   echo
   echo "  Options:"
   echo "    -h this help"
+  echo "    -n <nb cores>, default: $nbCores"
   echo
 }
 
@@ -34,8 +36,9 @@ function fullPathFile {
 
 
 OPTIND=1
-while getopts 'h' option ; do 
+while getopts 'hn:' option ; do 
     case $option in
+	"n" ) nbCores="$OPTARG";;
 	"h" ) usage
  	      exit 0;;
 	"?" ) 
@@ -67,7 +70,7 @@ rm -f "$f" # unusre
 
 config=$(fullPathFile "$config")
 echo "#!/bin/bash" >"$script"
-echo "#SBATCH -n 8" >>"$script"
+echo "#SBATCH -n $nbCores" >>"$script"
 echo "#SBATCH -t $tchpcTime" >>"$script"
 echo "#SBATCH -p $partition" >>"$script"
 echo "#SBATCH -U $project" >>"$script"
@@ -81,7 +84,7 @@ cat "$listFile" | while read f; do
     no=$(( $no + 1 ))
 done
 no=$(cat "$config" | wc -l)
-while [ $no -lt 8 ]; do
+while [ $no -lt $nbCores ]; do
     echo "$no sleep 3s" >>"$config"
     no=$(( $no + 1 ))
 done
