@@ -21,6 +21,7 @@ forceDeletePrevRunning=0
 continueWithPrevRunning=0
 verbose=0
 printNbLastDone=10
+debugMode=0
 
 
 function usage {
@@ -55,6 +56,7 @@ function usage {
   echo "                 (this can be used to transmit a path, for instance)."
   echo "    -i <task first command> add this command to be run before the task for every"
   echo "       task. Example: 'source ~/.bashrc'"
+  echo "    -d debug mode: keep the '.processing' version of the task as '.bak'."
   echo
 }
 
@@ -185,8 +187,9 @@ function printSummary {
 
 
 OPTIND=1
-while getopts 'vVhs:p:fcb:e:i:' option ; do 
+while getopts 'vVhs:p:fcb:e:i:d' option ; do 
     case $option in
+	"d" ) debugMode=1;;
 	"h" ) usage
  	      exit 0;;
 	"s" ) sleepTime="$OPTARG";;
@@ -197,7 +200,7 @@ while getopts 'vVhs:p:fcb:e:i:' option ; do
 	"V" ) verbose=2;;
 	"b" ) batchSize="$OPTARG";;
 	"e" ) runScript="$OPTARG";;
-	"i" ) taskFirstCommand="$OPTARG";;
+	"i" ) taskInitCommand="$OPTARG";;
 	"?" ) 
 	    echo "Error, unknow option." 1>&2
             printHelp=1;;
@@ -264,7 +267,12 @@ while [ 1 == 1 ]; do
             cat "$f" >> "$f.processing"
             echo "head -n 2 \"$f.running\" > \"$f.done\" ; rm -f \"$f.running\""  >>"$f.processing"
             rm -f "$f"
-            mv  "$f.processing" "$f.running"
+	    if [ $debugMode -ne 1 ]; then
+		mv  "$f.processing" "$f.running"
+	    else
+		cat  "$f.processing" >"$f.running"
+		mv  "$f.processing" "$f.bak"
+	    fi
         done
 	if [ -z "$runScript" ]; then
 	    cat "$nextBatch" | while read taskFile; do
