@@ -6357,9 +6357,8 @@ Error message and password prompt
 * Misc
 ** Several examples of setup files for [[erw-pm]]</pre>
 </div>
-<div created="20160519155303467" modified="20160522172010728" title="erw-pm">
-<pre>
-! Overview
+<div created="20160519155303467" modified="20160525163235167" title="erw-pm">
+<pre>! Overview
 
 Very basic package management system in Bash. The main goal is to setup only the required environment variables for a given package, including (simple) dependencies. Typically the operations consist in adding ``&lt;package&gt;/bin`` to  the Bash env variable ``$PATH``, but any complex initialization (make, etc.) is supported.
 
@@ -6378,6 +6377,8 @@ Very basic package management system in Bash. The main goal is to setup only the
 # add the path(s) of the repo(s) where the packages are located
 
 Example:
+
+In order to initialize the system automatically, add the following lines to your ``~/.bashrc`` init file (replacing the paths with your own):
 
 ```
    source /CLG/Erwan/projects/erw-bash-commons/lib/init-erw-pm.sh
