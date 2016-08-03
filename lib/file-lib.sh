@@ -136,9 +136,9 @@ function mkdirSafe {
     local dir="$1"
     local prefixMsg="$2"
     if [ ! -d "$dir" ]; then
-	mkdir "$dir"
+	mkdir -p "$dir"
 	if [ $? -ne 0 ]; then
-	    echo "${prefixMsg}Error: Can not create '$dir'" 1>&2
+	    echo "${prefixMsg}Error: Cannot create '$dir'" 1>&2
 	    exitOrReturnError 1
 	fi
     fi
