@@ -156,29 +156,33 @@ function printSummary {
     echo "SUMMARY $now: $nbWait tasks waiting, $nbRun tasks running, $nbDone tasks done since $startDate."
     if [ $nbRun -gt 0 ]; then
 	f=$(getTask "old" "run")
-	s=$(timeElapsedSinceFileWasModified "$f" 1)
-	echo -n "          Oldest task running, started $s ago: "
-	basename "${f%.running}"
-	f=$(getTask "new" "run")
-	s=$(timeElapsedSinceFileWasModified "$f" 1)
-	echo -n "          Newest task running started $s ago: "
-	basename "${f%.running}"
-	if [ $verbose -ge 1 ]; then
-	    echo "        Recently achieved tasks:"
-	    getTask "new" "done" "$printNbLastDone" | while read f; do
-		s=$(timeElapsedSinceFileWasModified "$f" 1)
-		echo "          $(basename ${f%.done}) (done $s ago)"
-	    done
-	    echo "        Currently running tasks:"
-	    getTask "new" "run" "$nbSlots" | while read f; do
-		s=$(timeElapsedSinceFileWasModified "$f" 1)
-		echo "          $(basename ${f%.running}) (started ${s} ago)"
-	    done
-	    
+	if [ ! -z "$f" ]; then # no file running currently (probably finished quickly)
+	    s=$(timeElapsedSinceFileWasModified "$f" 1)
+	    echo -n "          Oldest task running, started $s ago: "
+	    basename "${f%.running}"
+	    f=$(getTask "new" "run")
+	    s=$(timeElapsedSinceFileWasModified "$f" 1)
+	    echo -n "          Newest task running started $s ago: "
+	    basename "${f%.running}"
+	    if [ $verbose -ge 1 ]; then
+		echo "        Currently running tasks:"
+		getTask "new" "run" "$nbSlots" | while read f; do
+		    s=$(timeElapsedSinceFileWasModified "$f" 1)
+		    echo "          $(basename ${f%.running}) (started ${s} ago)"
+		done
+		
+	    fi
+	else 
+	    echo    "          cannot print details, the $nbRun running task(s) are finished already"
 	fi
     else
 	echo "        no task running currently."
     fi
+    echo "        Recently achieved tasks:"
+    getTask "new" "done" "$printNbLastDone" | while read f; do
+	s=$(timeElapsedSinceFileWasModified "$f" 1)
+	echo "          $(basename ${f%.done}) (done $s ago)"
+    done
 }
 
 
