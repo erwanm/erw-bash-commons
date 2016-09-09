@@ -1,2 +1,4 @@
 
-See documentation: index.html
+
+
+See [documentation](index.html) for more detail.
