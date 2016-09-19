@@ -1,22 +1,26 @@
 #!/bin/bash
+
+#twdoc
+#
 # EM Feb 2014
 #
 # This a library of bash functions; to use any of these the calling
 # script must "source" this library.
 #
-#
+#/twdoc
 
 libName=$(basename "$BASH_SOURCE")
 [ "$BASH_SOURCE" != "$0" ] || echo "$libName: Warning: it seems that this library is called normally instead of being sourced" 1>&2
 
 
-# args: 
-# STDIN = 
-# $1 = <searched item>
-# $2 = <list of items separatated by space (default)>
-# $3 = [separator] if the separator is different from space
+#twdoc memberList $item $list [$separator]
 #
-# returns 0 if true, 1 otherwise.
+# * $item: the searched item
+# * $list:  the list of items, separatated by space (default)
+# * $separator: (optional) if the separator is different from space
+#
+# returns 0 if the item is found, 1 otherwise.
+#/twdoc
 #
 function memberList {
     item="$1"
@@ -40,6 +44,7 @@ function memberList {
 }
 
 
+#twdoc getScriptLocation 
 #
 # prints the current script location 
 #
@@ -47,7 +52,7 @@ function memberList {
 # called normally. Also if called inside a function which has been
 # read from a library, it will return the location of the calling
 # script, not the library file.
-#
+#/twdoc
 #
 function getScriptLocation {
     # one-liner:
@@ -58,9 +63,12 @@ function getScriptLocation {
 
 
 
+#twdoc setEnvVar $varName $value
 #
-# assigns $1 to $2, where $2 is the name of an env. var.
+# assigns $value to $varName, where $varName is the name of an env. var.
 # (not sure it's worth a function though)
+#
+#/twdoc
 #
 function setEnvVar {
     export $2="$1"
@@ -68,15 +76,17 @@ function setEnvVar {
 
 
 
+#twdoc addToEnvVar $newItem $varName [$separator]
 #
 # adds an element to a list in an environment variable only if it does
-# not belong to it yet (default separator is space).
+# not belong to it already (default separator is space).
 #
-# args: 
-# $1: <item> to add to the list 
-# $2: <target> the name of the env var
-# $3: [separator] specify the separator if not space
 #
+# * $newItem: item to add to the list 
+# * $varName: name of the env var to add to
+# * $separator: (optional) specify the separator if not space
+#
+#/twdoc
 function addToEnvVar {
     newItem=$1
     varName=$2
@@ -98,11 +108,13 @@ function addToEnvVar {
 }
 
 
+#twdoc execInDir $execFile
 #
-# executes a script/program in its directory.
-# args: [-s] <executable file (with full path)>
-# if option -s is provided, the script is sourced instead of only executed.
+# executes a script/program in its directory. ``$execFile`` is an executable file with its full path.
 #
+# * option -s: if provided, the script is sourced instead of only executed.
+#
+#/twdoc
 function execInDir {
     sourceIt=
     if [ "$1" == "-s" ]; then
@@ -126,11 +138,22 @@ function execInDir {
 
 
 
+#twdoc readFromParamFile $file $name $errMsgPrefix [$separator] [$noWarningIfEmpty] [$returnThisValueIfNotDefined] [$assignToThisNameInstead]
 #
-# assigns a variable with the name "$name" (same as un the parameter file), so that
-# it does not need to be called as myvar=$(readFromParamFile ...), because in this
-# case the function would not be able to make the calling script die.
+# Reads the value of a parameter ``$name`` in a parameters file
+# ``$file`` and assigns it to a variable with the same name ``$name``.
 #
+# Remark: Same idea as something like ``myvar=$(readFromParamFile
+# ...)``, but here the function can make the calling script die if
+# there is an error.
+#
+# * $errMsgPrefix: in case of error, prints this before the error message (used to identify the calling script)
+# * $separator: separator used in the parameters file between the name and the value. Default: ``=``.
+# * $noWarningIfEmpty: by default a warning is printed to STDERR if the parameter exists but has no value. Set this argument to anything but empty not to print any warning.
+# * $returnThisValueIfNotDefined: by default an error is raised and the script is stopped if the parameter is not defined. If this argument is defined, its value is simply returned instead.
+# * *assignToThisNameInstead: if defined, ``$name`` is the name read from the file but the value is assigned to the variable ``$assignToThisNameInstead``
+#
+#/twdoc
 function readFromParamFile {
     local file="$1"
     local name="$2"
@@ -168,9 +191,11 @@ function readFromParamFile {
 }
 
 
+#twdoc evalSafe $command $errMsgPrefix
 #
-# runs the command provided with eval and die if the return status is not zero
+# Runs the command provided with eval, and dies if the return status is not zero.
 #
+#/twdoc
 function evalSafe {
     local command="$1"
     local errMsgPrefix="$2"
@@ -183,28 +208,21 @@ function evalSafe {
 }
 
 
+#twdoc isSourced
 #
 # returns 0 only if the current script is sourced from the very first
 # level, i.e. when variables modifications in the first-level script
 # apply globally and a call to "exit" in the first-level script would
 # end the bash session (1 otherwise).
 #
-# Remark: if a sub-script is called without "source" somewhere in the
+# * Remark: if a sub-script is called without "source" somewhere in the
 # stack of calls, this function still considers that it is sourced
 # even though it actually operates in a sub-shell.
-#
-# Remark: does not return true if a function is called at the first
+# * Remark: does not return true if a function is called at the first
 # level, because in this case nothing is sourced, even though the
 # effect is the same. (maybe also in other cases?)
 #
-#
-# OBSOLETE (version 1) returns 0 only if the current script is
-# sourced at any level, i.e. if "source" appears at any level in the
-# function call stack.  Remark: the fact that a library has been
-# sourced and one of its function is used anywhere does not mean that
-# it is sourced, since the function is usually executed in a
-# non-sourced context and not in the library where it was defined.
-#
+#/twdoc
 #
 function isSourced {
     local lastFunc=${#FUNCNAME[@]}
@@ -227,6 +245,7 @@ function isSourced {
 }
 
 
+#twdoc $errorCode
 #
 # stops the execution with the appropriate method depending on
 # whether the script is being sourced or not.
@@ -234,7 +253,7 @@ function isSourced {
 # After many tests, I realized that it is impossible to use either
 # return or exit (in a function) depending on whether the script is
 # sourced/executed at the session level or executed normally, simply
-# because, when executed at the session level (which is not so simple
+# because when executed at the session level (which is not so simple
 # to detect in an external function btw):
 #
 # - exit closes the session if executed at the session level
@@ -261,6 +280,8 @@ function isSourced {
 # functions stack).
 #
 # kept commented code for historical reasons (more or less).
+#
+#/twdoc
 #
 function exitOrReturnError {
     local errCode=${1:-1}

@@ -21,7 +21,11 @@ projectId=$(basename "$projectPath")
 function usage {
     echo "Usage: source $progName"
     echo
-    echo "  Remark: can be called from any location (supposedly!)"
+    echo "  Initializes the erw-pm package management system in the current Bash session."
+    echo "  Makes the erw-pm commands available, run erw-pm -h for more detail."
+    echo
+    echo "  Remark: can be called from any location."
+    echo
 }
 
 

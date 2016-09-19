@@ -1,20 +1,25 @@
 #!/bin/bash
+
+#twdoc
+#
 # EM Feb 2014
 #
 # This a library of bash functions; to use any of these the calling
 # script must "source" this library.
 #
-#
+#/twdoc
+
 source $(dirname "$BASH_SOURCE")/common-lib.sh
 
 libName=$(basename "$BASH_SOURCE")
 [ "$BASH_SOURCE" != "$0" ] || echo "$libName: Warning: it seems that this library is called normally instead of being sourced" 1>&2
 
-# args: 
-# STDIN = 
-# $1 = <searched entry>
-# $2 = <list of directories separatated by space (default)>
-# $3 = [separator] if the separator is different from space
+
+#twdoc searchEntryInDirList $entry $dirsList [$separator]
+#
+# * $entry: searched entry
+# * $dirsList: list of directories separatated by space (default)
+# * $separator: optional, if the separator is different from space
 #
 # for every dir in the list, searches if dir/entry exists;
 # prints the path of the first occurrence found to STDOUT
@@ -23,6 +28,7 @@ libName=$(basename "$BASH_SOURCE")
 # Remark: the entry can be either a dir or a file. The
 # caller is responsible for checking this if needed.
 #
+#/twdoc
 function searchEntryInDirList {
     entry="$1"
     dirs="$2"
@@ -43,12 +49,13 @@ function searchEntryInDirList {
 }
 
 
-
+#twdoc linkAbsolutePath $destEntry $targetFile1 [... $targetFileN]
 #
-# $1 = dest dir/file, $2..$n = target files
-# if $1 is a dir, for each $X, X>1, creates a symlink located in $1 pointing to $X
-# if $1 is a file only one target is permitted: creates a symlink $1 pointing to $2
+# * $destEntry is a file or directory where the symbolic link(s) will be created:
+# ** if $destEntry is a directory, creates a symlink located in $destEntry pointing to $targetFileI for each file $targetFileI;
+# ** if $destEntry is a file, creates a symlink $destEntry pointing to $targetFile1 (only one target file permitted).
 #
+#/twdoc
 function linkAbsolutePath {
     local thisDir=$(pwd)
     local dest="$1"
@@ -91,6 +98,13 @@ function linkAbsolutePath {
 }
 
 
+#twdoc absolutePath $entry
+#
+# * $entry is either a file or a directory
+#
+# Prints the absolute path of $entry to STDOUT.
+#
+#/twdoc
 function absolutePath {
     local entry="$1"
     if [ -d "$entry" ]; then
@@ -106,7 +120,11 @@ function absolutePath {
 }
 
 
-
+#twdoc dieIfNoSuchDir $dir [$prefixMsg]
+#
+# Interrupts the program if the directory ``$dir`` does not exist.
+#
+#/twdoc
 function dieIfNoSuchDir {
     local dir="$1"
     local prefixMsg="$2"
@@ -117,6 +135,11 @@ function dieIfNoSuchDir {
 }
 
 
+#twdoc dieIfNoSuchFile $file [$prefixMsg]
+#
+# Interrupts the program if the file ``$file`` does not exist.
+#
+#/twdoc
 function dieIfNoSuchFile {
     local file="$1"
     local prefixMsg="$2"
@@ -128,10 +151,12 @@ function dieIfNoSuchFile {
 
 
 
+#twdoc mkdirSafe $dir [$prefixMsg]
 #
-# does nothing if the dir already exists, tries to
-# create it and stops with an error if it didn't work.
+# does nothing if the directory ``$dir`` already exists, otherwise tries to
+# create it and stops with an error if the creation failed. Parent directories are created if needed.
 #
+#/twdoc
 function mkdirSafe {
     local dir="$1"
     local prefixMsg="$2"
@@ -145,12 +170,18 @@ function mkdirSafe {
 }
 
 
+#twdoc mountSSH $mountFrom $mountTo [$prefixMsg] [$quiet]
 #
-# mountFrom = [user@]machine:path
+# Mounts a remote path as an SSH filesystem. SSH keys should have been configured, otherwise the password will be asked.
+# Prints a warning if ``$mountedFrom`` is already mounted to a different
+#   directory, does nothing if already mounted to ``$mountTo``.
 #
-# - prints a warning if 'mountedFrom' already mounted to a different
-#   directory, does nothing if already mounted to 'mountTo'
-# - quiet empty => prints info
+# * ``$mountFrom``: the mounted remote path: ``[user@]machine:path``
+# * ``$mountTo``: the target directory where the remote path is mounted
+# * ``$prefixMsg``: optional
+# * ``$quiet``: if empty, prints an information message.
+#
+#/twdoc
 function mountSSH {
     local mountFrom="$1"
     local mountTo="$2"
@@ -187,9 +218,12 @@ function mountSSH {
 }
 
 
-# creates a copy of the source dir where every subdir is created in the dest dir
-# and every file is symlinked to the source file.
-# the dest dir (root) must be created before.
+#twdoc cloneDir $sourceDir $destDir [$overwrite]
+#
+# Creates a copy of ``$sourceDir``, where every subdir is created under ``$destDir``
+# and every file is symlinked to the source file. the dest dir (root) must have been created before.
+#
+#/twdoc
 function cloneDir {
     local source="$1"
     local dest="$2"

@@ -1,8 +1,11 @@
 #!/bin/bash
+
+#twdoc 
 # EM Feb 2014; update April 14
 #
 #
-#
+#/twdoc
+
 libName=$(basename "$BASH_SOURCE")
 [ "$BASH_SOURCE" != "$0" ] || echo "$libName: Warning: it seems that this library is called normally instead of being sourced" 1>&2
 
@@ -12,6 +15,7 @@ source $(dirname "$BASH_SOURCE")/file-lib.sh
 commandId="erw-pm"
 setupFileName="setup.erw-pm.sh"
 
+#twdoc
 #
 # This is a library for several functions related to my "project
 # management" system, more precisely dependency management. It is
@@ -20,49 +24,49 @@ setupFileName="setup.erw-pm.sh"
 #
 #
 # Principle: the "system" must be initialized by a sourced call to
-# init-erw-pm.sh, typically in ~/.bashrc:
+# ``init-erw-pm.sh``, typically in ``~/.bashrc``:
 #
+# ```
 # source path/to/erw-bash-commons/init-erw-pm.sh
+# ```
 #
 # This will source all the needed libraries (including the present
 # one). Then the functions needed become available at all time,
-# especially "erw-pm", which is the main one (call erw-pm help to see
-# the options).  The directory which contains erw-bash-commons is
+# especially ``erw-pm``, which is the main one (``erw-pm -h`` to see
+# the options).  The directory which contains ``erw-bash-commons`` is
 # automatically added to the list of repositories stored in the env
-# var ERW_PM_REPO; other repositories must be added manually,
-# e.g. with
+# var ``$ERW_PM_REPO``; other repositories must be added manually,
+# e.g. with ``erw-pm addrepo path/to/repo``
 #
-# erw-pm addrepo path/to/repo
-#
-# Every project P must contain a file $setupFileName which makes any
+# Every project P must contain a file ``setup.erw-pm.sh`` which does any
 # needed initializations, in particular activating any required
 # dependency (i.e. others project which need to be active for the
-# project P to work), setting the path in PATH, etc. Example:
+# project P to work), setting the path in ``$PATH``, etc. Example:
 #
+# ```
 # erw-pm activate Text-TextAnalytics
 # erw-pm activate TreeTagger
 # erw-pm activate erw-R-commons
 # erw-pm activate perl-libraries
 # addToEnvVar "$(pwd)/bin" PATH :
+# ```
 #
-# 
-#
+#/twdoc
 
 
 
 
+#twdoc activateProjectIfNeeded $project [$extraRepo1 [ $extraRepo2 ...] ]
 #
-# activateProjectIfNeeded <project> [<extra repo1> [ <extra repo2> ...] ]
-#
-# if <project> is not already active, checks that there is a directory
-# named <project> in at least one of the directories in ERW_PM_REPO
+# if ``$project`` is not already active, checks that there is a directory
+# named ``$project`` in at least one of the directories in ``$ERW_PM_REPO``
 # env var and then activates it.
 
-#  Optionally if extra directories are provided as arguments they will
+# Optionally if extra directories are provided as arguments they will
 # also be checked (actually before) in the same way as any dir in
-# ERW_PM_REPO.
+# ``$ERW_PM_REPO``.
 #
-#
+#/twdoc
 function activateProjectIfNeeded {
     local projectName="$1"
     shift
@@ -87,18 +91,26 @@ function activateProjectIfNeeded {
 }
 
 
+#twdoc activateProjectDir $projectDir
+#
+# Activates the project located in directory ``$projectDir``
+#
+#/twdoc
 function activateProjectDir {
 #    echo "DEBUG activateProjectDir: $@" 1>&2
     local dir=$(absolutePath "$1")
     projectId=$(basename "$dir")
-#    export TRUC=machin2
 #    echo "DEBUG activateProjectDir: execting $dir/$setupFileName" 1>&2
     execInDir -s "$dir/$setupFileName"
     addToEnvVar "$projectId" ERW_PM_ACTIVE :
 }
 
 
-# TODO
+#twdoc commandUsage
+#
+# Prints the "usage" message with the available options.
+#
+#/twdoc
 function commandUsage {
     echo "Usage: $commandId <command> [options]"
     echo
@@ -110,6 +122,11 @@ function commandUsage {
 }
 
 
+#twdoc erw-pm $command
+#
+# Main function which runs the specified command (with its specified arguments if any).
+#
+#/twdoc
 function erw-pm {
 #    echo "DEBUG erw-pm: $@" 1>&2
     command="$1"
@@ -131,7 +148,11 @@ function erw-pm {
 }
 
 
-
+#twdoc commandAddRepo $repoDir
+#
+# Adds a repository directory to ``$ERW_PM_REPO``.
+#
+#/twdoc
 function commandAddRepo {
 #    echo "DEBUG addRepo $@" 1>&2
     if [ -z "$1" ]; then
@@ -148,8 +169,14 @@ function commandAddRepo {
 }
 
 
-# TODO add option to prepend new repos
+#twdoc commandActivate [$projectId1 ... $projectIdN]
 #
+# For every project supplied, activates it if not already activate.
+# If no project id is specified, tries to acivate the current directory (prints a warning).
+#
+# * ''TODO'' add option to prepend new repos
+#
+#/twdoc
 function commandActivate {
 #    echo "DEBUG: activate '$@'" 1>&2
     if [ -z "$1" ]; then
@@ -165,9 +192,13 @@ function commandActivate {
 }
 
 
-
-# TODO option only active/only non active?
+#twdoc commandList [$listOptions]
 #
+# Prints the list of projects. 
+# * If option ``-a`` is supplied, only the activate ones
+# * If option ``-i`` is supplied, only the inactivate ones
+#
+#/twdoc
 function commandList {
 #    echo "DEBUG options=$@" 1>&2
     local printActive=1
