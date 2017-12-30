@@ -188,7 +188,7 @@ function mountSSH {
     local prefixMsg="$3"
     local quiet="$4"
     if [ -z "$quiet" ]; then
-	echo "${prefixMsg}Info: mountSSH from '$mountFrom' to '$mountTo'"
+	echo "${prefixMsg}Info: mountSSH from '$mountFrom' to '$mountTo'" 1>&2
     fi
     mkdirSafe "$mountTo" "$mountSSH: "
     mtabLine=$(grep "$mountFrom" /etc/mtab) # already mounted?
@@ -205,7 +205,7 @@ function mountSSH {
     fi
     if [ -z "$alreadyMounted" ]; then
 	if [ $(ls -A "$mountTo" | wc -l) -gt 0 ]; then
-	    echo "${prefixMsg}Error: directory $mountPoint is not empty." 1>&2
+	    echo "${prefixMsg}Error: directory $mountTo is not empty." 1>&2
 	    exitOrReturnError 1
 	else
 #	    echo "DEBUG: sshfs $mountFrom $mountTo" 1>&2
