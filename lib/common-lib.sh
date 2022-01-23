@@ -127,11 +127,11 @@ function execInDir {
     if [ -z "$sourceIt" ]; then
 #	echo "execInDir: executing $executable from $(pwd)" 1>&2
 	./"$executable"
-	[ $? -eq 0 ] || echo "execInDir: Warning: error status not zero after executing '$executable'" 1>&2
+	[ $? -eq 0 ] || echo "execInDir: Warning: error status not zero after executing '$executable' in $(pwd)" 1>&2
     else
 #	echo "execInDir: sourcing $executable from $(pwd)" 1>&2
 	source "./$executable"  # Important: don't forget the "./"!! source searches the PATH for its argument
-	[ $? -eq 0 ] || echo "execInDir: Warning: error status not zero after sourcing '$executable'" 1>&2
+	[ $? -eq 0 ] || echo "execInDir: Warning: error status not zero after sourcing '$executable' in $(pwd)" 1>&2
     fi
     popd >/dev/null
 }
