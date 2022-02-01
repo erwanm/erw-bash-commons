@@ -2,11 +2,39 @@
 
 # EM April 15, modified March 16
 
+# modified May 18 for multiple instances
+
+# TODO: option to start tasks and quit / quit if no more tasks
+# TODO: printing for instance tasks
+# TODO: keep track of running time and total time in current tasks file and tasks done file
+# TODO: option slurm instead of additional script?
+# TODO: make multi-daemon mode the default
+# TODO: quiet option
+# TODO: option to log everything to specific dir with name based on daemonId (see about tasks list files) "control dir"
+# TODO: flexible management wrt time and memory
+# TODO: option task splitting?
+# TODO: option timeout tasks (by adding to the .running)
+# TODO: option to die after a certain time and resubmit job for itself ???
+
+# remark: analyze options about some kind of interactive mode (current, with regular printing) and silent mode with just control files
+
+# TODO what to do if a job is killed (memory issue)? tasks left as "running" should not be restarted as they are potentially going to fail, but should not be counted as running anymore.
+
+# outside this script: generate generic sbatch job, possibly with specific process which submits jobs in the queue to continue.
+
+# TODO: task done should be removed from the dir, maybe store it somewhere else? debug option?
+
+# TODO option randomize picking task, in order to avoid putting big tasks together
+
+# default config with workdir/tasks workdir/control files??
+
+
 source common-lib.sh
 source file-lib.sh
 
-startDate=$(date +"%y.%m.%d %H:%M")
+startDate=$(date +"%y.%m.%d_%H.%M")
 progName=$(basename "$BASH_SOURCE")
+daemonId="$HOSTNAME-$$-$startDate"
 workDir=
 batchSize=1
 runScript=""
@@ -22,6 +50,14 @@ continueWithPrevRunning=0
 verbose=0
 printNbLastDone=10
 debugDir=""
+multiDaemons=""
+lockSleepTime=5s
+adaptMemByProcess=""
+
+
+
+myCurrentTasksFile=$(mktemp --tmpdir "$daemonId.XXXXXXXXXX.running")
+myTasksDoneFile=$(mktemp --tmpdir "$daemonId.XXXXXXXXXX.done")
 
 
 function usage {
@@ -38,9 +74,10 @@ function usage {
   echo "    -s <sleep time> default: $sleepTime"
   echo "    -p <N> print summary every N iterations (i.e. N * <sleep time>)"
   echo "       default: $summaryEveryNIterations"
-  echo "    -f force deletion of previously existing <task>.running files"
+  echo "    -f force deletion of previously existing <task>.running files;"
+  echo "       (ignored if -c or -m is supplied)."
   echo "    -c continue normally with previously existing <task>.running files"
-  echo "       (-f is ignored)"
+  echo "       (-f is ignored; implied in multiple daemon mode, see -m)."
   echo "    -v verbose mode: more details about running processes printed"
   echo "    -V high verbose mode: prints info every time a task is started  (implies -v)"
   echo "    -b <N> start tasks by batches of <N> (useful with -e). Default: 1"
@@ -57,6 +94,14 @@ function usage {
   echo "    -i <task first command> add this command to be run before the task for every"
   echo "       task. Example: 'source ~/.bashrc'"
   echo "    -d <dir> debug mode: copy the '.processing' version of the task in this dir."
+  echo "    -m Multiple daemons mode. Allows multiple instances of this script to work on"
+  echo "       the same list of tasks while avoiding conflicts over tasks between instances."
+  echo "    -a <mem by process (GB)> adapt the number of processes to run in parallel to"
+  echo "       the machine; the number of processes is calculated as: "
+  echo "         min ( <total memory>/<mem by process> , <nb cores> ,  <nb slots> )"
+  echo "       i.e. the resulting number cannot be more than the actual number of cores or"
+  echo "       the value given for <nb slots>. If <mem by process> is 0, then the minimum"
+  echo "       between <nb cores> and <nb slots> is used."
   echo
 }
 
@@ -93,11 +138,11 @@ function timeElapsedSinceFileWasModified {
 # returns 3 values: nb waiting, nb running, nb done since the dameon was started
 # use cut -f <X> to get a specific value
 #
-function getCurrentNb {
+function getCurrentNbGlobal {
     # info: using a file because 'ls dir/*.done'  will sometimes give an error "argument list too long"
     # see also http://www.linuxjournal.com/article/6060?page=0,0
     tmp=$(mktemp) 
-    ls "$workDir" >"$tmp" 2>/dev/null
+    ls "$workDir" | grep -v "lock" >"$tmp" 2>/dev/null
     nbAll=$(cat "$tmp" | wc -l)
     nbRunning=$(cat "$tmp" | grep '.running$' | wc -l)
     nbDoneAll=$(cat "$tmp" | grep '.done$' | wc -l)
@@ -143,7 +188,7 @@ function getTask {
     fi
 
 #    echo "$comm  | head -n $nb |  sed 's:^:$workDir:g'" 1>&2
-    evalSafe "$comm  | head -n $nb |  sed 's:^:$workDir/:g'" "$progName,$LINENO: "
+    evalSafe "$comm  | grep -v lock | head -n $nb |  sed 's:^:$workDir/:g'" "$progName,$LINENO: "
 }
 
 
@@ -153,7 +198,12 @@ function printSummary {
     nbDone=$3
     
     now=$(date +"%y.%m.%d %H:%M")
-    echo "SUMMARY $now: $nbWait tasks waiting, $nbRun tasks running, $nbDone tasks done since $startDate."
+    echo "SUMMARY $now: $nbWait tasks waiting, $nbRun tasks running, $nbDone tasks done."
+    if [ ! -z "$multiDaemons" ]; then
+	myNbRun=$(cat "$myCurrentTasksFile" | wc -l)
+	myNbDone=$(cat "$myTasksDoneFile" | wc -l)
+	echo "  Daemon $daemonId: $myNbRun tasks running, $myNbDone tasks done since $startDate."
+    fi
     if [ $nbRun -gt 0 ]; then
 	f=$(getTask "old" "run")
 	if [ ! -z "$f" ]; then # no file running currently (probably finished quickly)
@@ -186,12 +236,58 @@ function printSummary {
 }
 
 
+function calculateNbSlots {
+    local memByProcessGB="$1"
+
+    nbCores=$(grep -c "^processor" /proc/cpuinfo)
+#    echo "debug: nb cores = $nbCores" 1>&2
+    nbProcesses=$nbSlots
+    if [ $nbCores -lt $nbProcesses ]; then
+	nbProcesses=$nbCores
+    fi
+    if [ $memByProcessGB -ne 0 ]; then
+	# assuming mem always given in kb
+	totalMemKB=$(cat /proc/meminfo | grep MemTotal | sed 's/^MemTotal:\s*//' | cut -f 1 -d ' ')
+#	echo "debug: total memory = $totalMemKB" 1>&2
+	memByProcessKB=$(( $memByProcessGB * 1024 * 1024 ))
+	# remark: truncating to the nearest lower int
+	nbMem=$(( $totalMemKB / $memByProcessKB ))
+	if [ $nbMem -lt $nbProcesses ]; then
+	    nbProcesses=$nbMem
+	fi
+    fi
+    #echo "debug: final nb processes = $nbProcesses" 1>&2
+    echo "$nbProcesses"
+}
+
+
+
+function updateRunningTasks {
+    next=$(mktemp --tmpdir "$daemonId.next.XXXXXXXXXX")
+    cat "$myCurrentTasksFile" | while read f; do
+	if [ -f "$f.running" ]; then # still running
+	    echo "$f" >>"$next"
+	else
+	    if [ -f "$f.done" ]; then
+		echo "$f" >>"$myTasksDoneFile"
+		if [ $verbose -ge 2 ]; then
+                    echo "INFO: Finished task '$f'"
+		fi
+	    else
+		echo "Warning: ghost task $f is neither running or done" 1>&2
+	    fi
+	fi
+    done
+    cat "$next" >"$myCurrentTasksFile"
+    rm -f "$next"
+}
+
 
 
 
 
 OPTIND=1
-while getopts 'vVhs:p:fcb:e:i:d:' option ; do 
+while getopts 'vVhs:p:fcb:e:i:d:ma:' option ; do 
     case $option in
 	"d" ) debugDir="$OPTARG";;
 	"h" ) usage
@@ -205,6 +301,9 @@ while getopts 'vVhs:p:fcb:e:i:d:' option ; do
 	"b" ) batchSize="$OPTARG";;
 	"e" ) runScript="$OPTARG";;
 	"i" ) taskInitCommand="$OPTARG";;
+	"m" ) multiDaemons="yep"
+	      continueWithPrevRunning=1;;
+	"a" ) adaptMemByProcess="$OPTARG";;
 	"?" ) 
 	    echo "Error, unknow option." 1>&2
             printHelp=1;;
@@ -222,10 +321,15 @@ fi
 workDir="$1"
 nbSlots="$2"
 
+if [ ! -z "$adaptMemByProcess" ]; then
+    echo -n "Calculating number of parallel processes for $daemonId (memory by process = $adaptMemByProcess) : "
+    nbSlots=$(calculateNbSlots "$adaptMemByProcess")
+    echo $nbSlots
+fi
 
 mkdirSafe "$workDir" "$progName,$LINENO: "
 
-nbs=$(getCurrentNb)
+nbs=$(getCurrentNbGlobal)
 nbPrevDone=$(echo "$nbs" | cut -f 3)
 nbRun=$(echo "$nbs" | cut -f 2)
 nbWait=$(echo "$nbs" | cut -f 1)
@@ -246,51 +350,88 @@ if [ $nbWait -gt 0 ]; then
     echo "INFO $nbWait previously waiting tasks"
 fi
 
+if [ $verbose -ge 1 ]; then
+    echo "INFO: current tasks file: $myCurrentTasksFile"
+    echo "INFO: done tasks file: $myTasksDoneFile"
+fi
+
 iterNo=0
 while [ 1 == 1 ]; do
-    nbs=$(getCurrentNb)
-    nbRun=$(echo "$nbs" | cut -f 2)
+    nbs=$(getCurrentNbGlobal)
+#    nbRun=$(echo "$nbs" | cut -f 2)
     nbWait=$(echo "$nbs" | cut -f 1)
+    updateRunningTasks
+    myNbRun=$(cat "$myCurrentTasksFile" | wc -l)
 
-    while [ $nbWait -gt 0 ] && [ $nbRun -lt $nbSlots ]; do # need to start a new task
-	nextBatch=$(mktemp)
-        getTask "old" "wait" "$batchSize" >$nextBatch
-#	echo "DEBUG: '$nextBatch'" 1>&2
-#	exit 4
-        nbBatch=$(cat "$nextBatch" | wc -l)
-        cat "$nextBatch" | while read f; do
-            t=$(timeElapsedSinceFileWasModified "$f")
-            while [ $t -lt $waitAtLeastTimeAfterFileWritten ]; do
-                sleep $waitAtLeastTimeAfterFileWritten
-                t=$(timeElapsedSinceFileWasModified "$f")
-            done
-            if [ $verbose -ge 2 ]; then
-                echo "INFO: Starting task '$f' (waiting time: ${t}s)"
-            fi
-	    echo "$taskInitCommand"  > "$f.processing" # empty line if not used
-            cat "$f" >> "$f.processing"
-            echo "head -n 2 \"$f.running\" > \"$f.done\" ; rm -f \"$f.running\""  >>"$f.processing"
-            rm -f "$f"
-	    if [ -z "$debugDir" ]; then
-		mv  "$f.processing" "$f.running"
+    # multi daemons mode:
+    permissionToCollectTasks=""
+    # remark: no need to try to acquire lock if there is no task waiting or if all my slots are busy
+    if [ ! -z "$multiDaemons" ] && [ $nbWait -gt 0 ] && [ $myNbRun -lt $nbSlots ]; then
+	if [ ! -f "$workDir/lock" ]; then
+	    echo "Daemon $daemonId: creating lock with my ID" 1>&2
+	    echo "$daemonId" > "$workDir/lock"
+	    sleep $lockSleepTime
+	    x=$(cat "$workDir/lock")
+	    if [ "$x" ==  "$daemonId" ]; then # ok, job for current process
+		echo "Daemon $daemonId: I got the job" 1>&2
+		permissionToCollectTasks="yep"
 	    else
-		cat  "$f.processing" >"$f.running"
-		mv  "$f.processing" "$debugDir"
+		echo "Daemon $daemonId: didn't get the job" 1>&2
 	    fi
-        done
-	if [ -z "$runScript" ]; then
-	    cat "$nextBatch" | while read taskFile; do
-		bash "$taskFile.running" &
-	    done
 	else
-	    eval "$runScript \"$nextBatch\""
+	    echo "Daemon $daemonId: work dir locked, coming back later" 1>&2
 	fi
-        rm -f "$nextBatch"
-        nbRun=$(( $nbRun + $nbBatch ))
-        nbWait=$(( $nbWait - $nbBatch )) # remark: we don't update status with actual files inside this inner loop
-    done
+    else
+	permissionToCollectTasks="yep"
+    fi
+    if [ ! -z "$permissionToCollectTasks" ]; then
+#	echo "DEBUG nbWait=$nbWait; myNbRun=$myNbRun; nbSlots=$nbSlots" 1>&2
+	while [ $nbWait -gt 0 ] && [ $myNbRun -lt $nbSlots ]; do # need to start a new task
+	    nextBatch=$(mktemp)
+            getTask "old" "wait" "$batchSize" >$nextBatch
+            nbBatch=$(cat "$nextBatch" | wc -l)
+#	    echo "DEBUG: '$nextBatch', size $nbBatch" 1>&2
+            cat "$nextBatch" | while read f; do
+		t=$(timeElapsedSinceFileWasModified "$f")
+		while [ $t -lt $waitAtLeastTimeAfterFileWritten ]; do
+                    sleep $waitAtLeastTimeAfterFileWritten
+                    t=$(timeElapsedSinceFileWasModified "$f")
+		done
+		if [ $verbose -ge 2 ]; then
+                    echo "INFO: Starting task '$f' (waiting time: ${t}s)"
+		fi
+		echo "$taskInitCommand"  > "$f.processing" # empty line if not used
+		cat "$f" >> "$f.processing"
+		# when process has been done, remove the first and the last line (which were added just here)
+		echo "head -n -1 \"$f.running\" | tail -n +2 > \"$f.done\" ; rm -f \"$f.running\""  >>"$f.processing"
+		rm -f "$f"
+		if [ -z "$debugDir" ]; then
+		    mv  "$f.processing" "$f.running"
+		else
+		    cat  "$f.processing" >"$f.running"
+		    mv  "$f.processing" "$debugDir"
+		fi
+		# adding to the list of current tasks
+		echo "$f" >>"$myCurrentTasksFile"
+            done
+	    if [ -z "$runScript" ]; then
+		cat "$nextBatch" | while read taskFile; do
+		    bash "$taskFile.running" &
+		done
+	    else
+		eval "$runScript \"$nextBatch\""
+	    fi
+            rm -f "$nextBatch"
+            myNbRun=$(( $myNbRun + $nbBatch ))
+            nbWait=$(( $nbWait - $nbBatch )) # remark: we don't update status with actual files inside this inner loop
+	done
+	if [ ! -z "$multiDaemons" ]; then # the lock was obtained for this daemon, release it now
+            echo "Daemon $daemonId: job done, removing lock" 1>&2
+	    rm -f "$workDir/lock"
+	fi
+    fi
     if [ $(( $iterNo % summaryEveryNIterations )) -eq 0 ]; then
-	nbs=$(getCurrentNb)
+	nbs=$(getCurrentNbGlobal)
 	printSummary $nbs
     fi
 

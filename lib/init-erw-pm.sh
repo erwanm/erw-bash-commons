@@ -44,7 +44,7 @@ while getopts 'h' option ; do
 done
 shift $(($OPTIND - 1))
 if [ $# -ne 0 ]; then
-    echo "Error: expecting 0 args." 1>&2
+    echo "Error: expecting 0 args (received args = '$@')." 1>&2
     printHelp=1
 fi
 if [ ! -z "$printHelp" ]; then
