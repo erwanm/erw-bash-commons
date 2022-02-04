@@ -53,7 +53,7 @@ debugDir=""
 multiDaemons=""
 lockSleepTime=5s
 adaptMemByProcess=""
-
+quitIdle=0
 
 
 myCurrentTasksFile=$(mktemp --tmpdir "$daemonId.XXXXXXXXXX.running")
@@ -102,6 +102,7 @@ function usage {
   echo "       i.e. the resulting number cannot be more than the actual number of cores or"
   echo "       the value given for <nb slots>. If <mem by process> is 0, then the minimum"
   echo "       between <nb cores> and <nb slots> is used."
+  echo "    -q <N> exit after N iterations with all tasks done and no new task to do."
   echo
 }
 
@@ -287,7 +288,7 @@ function updateRunningTasks {
 
 
 OPTIND=1
-while getopts 'vVhs:p:fcb:e:i:d:ma:' option ; do 
+while getopts 'vVhs:p:fcb:e:i:d:ma:q:' option ; do 
     case $option in
 	"d" ) debugDir="$OPTARG";;
 	"h" ) usage
@@ -304,6 +305,7 @@ while getopts 'vVhs:p:fcb:e:i:d:ma:' option ; do
 	"m" ) multiDaemons="yep"
 	      continueWithPrevRunning=1;;
 	"a" ) adaptMemByProcess="$OPTARG";;
+	"q" ) quitIdle="$OPTARG";;
 	"?" ) 
 	    echo "Error, unknow option." 1>&2
             printHelp=1;;
@@ -356,12 +358,19 @@ if [ $verbose -ge 1 ]; then
 fi
 
 iterNo=0
-while [ 1 == 1 ]; do
+nbIterIdle=0
+while [ $quitIdle == 0 ] || [ $nbIterIdle -lt $quitIdle ]; do
     nbs=$(getCurrentNbGlobal)
 #    nbRun=$(echo "$nbs" | cut -f 2)
     nbWait=$(echo "$nbs" | cut -f 1)
     updateRunningTasks
     myNbRun=$(cat "$myCurrentTasksFile" | wc -l)
+    if [ $myNbRun -eq 0 ]; then
+	# assuming that the iteration is idle, reset later if not
+	nbIterIdle=$(( $nbIterIdle + 1 ))
+    else
+	nbIterIdle=0
+    fi
 
     # multi daemons mode:
     permissionToCollectTasks=""
@@ -387,6 +396,7 @@ while [ 1 == 1 ]; do
     if [ ! -z "$permissionToCollectTasks" ]; then
 #	echo "DEBUG nbWait=$nbWait; myNbRun=$myNbRun; nbSlots=$nbSlots" 1>&2
 	while [ $nbWait -gt 0 ] && [ $myNbRun -lt $nbSlots ]; do # need to start a new task
+	    nbIterIdle=0 # reset counter of idle iterations
 	    nextBatch=$(mktemp)
             getTask "old" "wait" "$batchSize" >$nextBatch
             nbBatch=$(cat "$nextBatch" | wc -l)
